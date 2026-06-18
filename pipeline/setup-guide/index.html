@@ -758,6 +758,7 @@ function renderBlock(block) {
            </div>
            <div class="code-body">${escHtml(block.code)}</div>
          </div>`
+      // trusted author HTML — block.html is a static string literal in STEPS, never from external input
       : `<div class="instruction-body">${block.html}</div>`;
     return `<div class="instruction">
               <div class="instruction-label">${escHtml(block.label)}</div>
@@ -765,6 +766,7 @@ function renderBlock(block) {
             </div>`;
   }
   if (block.type === 'callout') {
+    // trusted author HTML — block.html is a static string literal in STEPS, never from external input
     return `<div class="callout">${block.html}</div>`;
   }
   if (block.type === 'verify') {
@@ -796,7 +798,7 @@ function renderSidebar(currentIndex) {
   document.getElementById('step-list').innerHTML = STEPS.map((step, i) => {
     const isDone   = done.includes(i);
     const isActive = i === currentIndex;
-    const cls      = isDone ? 'done' : isActive ? 'active' : '';
+    const cls      = isActive ? (isDone ? 'done active' : 'active') : (isDone ? 'done' : '');
     const num      = isDone ? '✓' : i + 1;
     return `<li class="step-item ${cls}" onclick="goToStep(${i})">
               <div class="step-num">${num}</div>
