@@ -10,16 +10,26 @@ All commands run in **PowerShell** (`Win + X` → Terminal).
 
 ## 1. Install Python 3.12
 
-GDAL wheels are only available for 3.10–3.12 — 3.14+ won't work.
+GDAL wheels are only available for 3.10–3.12 — 3.14+ won't work. If you already have a different version, that's fine — 3.12 installs alongside it.
 
-1. Download from https://www.python.org/downloads/release/python-3128/ (Windows installer, 64-bit)
-2. Run — **check "Add python.exe to PATH"** before clicking Install
+Already have 3.12? Check first:
 
 ```powershell
-python --version   # Python 3.12.x
+py -3.12 --version   # already installed? skip the installer below
 ```
 
-> PATH not set? Re-run the installer → Modify → tick "Add Python to environment variables".
+If not installed:
+
+1. Download from https://www.python.org/downloads/release/python-3128/ (Windows installer, 64-bit)
+2. Run — you can leave "Add python.exe to PATH" unchecked if another Python already owns it
+
+Verify with the Python Launcher (open a new PowerShell window):
+
+```powershell
+py -3.12 --version   # Python 3.12.x
+```
+
+The `py` launcher picks the right version regardless of which Python owns your PATH. Subsequent steps use `py -3.12` for the same reason.
 
 ## 2. Install GDAL
 
@@ -45,7 +55,7 @@ python -c "from osgeo import gdal; print(gdal.__version__)"
 
 ```powershell
 cd C:\path\to\Brelly
-python -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
 

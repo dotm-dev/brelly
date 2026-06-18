@@ -21,12 +21,15 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 
 ## 2. Install Python 3.12
 
-GDAL wheels are only available for 3.10–3.12 — 3.14+ won't work.
+GDAL wheels are only available for 3.10–3.12 — 3.14+ won't work. If you already have a different Python version, that's fine — 3.12 installs alongside it.
 
 ```bash
+python3.12 --version   # already installed? skip the next command
 brew install python@3.12
 python3.12 --version   # Python 3.12.x
 ```
+
+All commands in this guide use `python3.12` explicitly — your existing Python is unaffected.
 
 ## 3. Install GDAL
 

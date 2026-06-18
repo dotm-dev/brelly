@@ -20,22 +20,24 @@ const STEPS = [
   // ── Step 2 ──────────────────────────────────────────────────────────────
   {
     title: 'Install Python 3.12',
-    desc:  'Python 3.14+ is too new — GDAL binary wheels are only available for 3.10–3.12. Install 3.12 specifically.',
+    desc:  'GDAL binary wheels are only available for Python 3.10–3.12. If you already have a different version, that\'s fine — 3.12 installs alongside it and this guide uses it explicitly.',
     macos: [
-      { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install python@3.12` },
+      { type: 'callout', html: `Already have Python 3.12? Run <code>python3.12 --version</code> — if it prints <code>Python 3.12.x</code>, skip to the next step.` },
+      { type: 'instruction', label: 'Install alongside any existing Python', lang: 'bash', code: `brew install python@3.12` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `python3.12 --version` },
       { type: 'verify', code: `Python 3.12.x` },
-      { type: 'callout', html: `You do not need to change your system default Python. All commands in this guide use <code>python3.12</code> explicitly.` },
+      { type: 'callout', html: `Your existing Python and any other tools are unaffected. All commands in this guide use <code>python3.12</code> explicitly, never the system default.` },
     ],
     windows: [
+      { type: 'callout', html: `Already have Python 3.12? Run <code>py -3.12 --version</code> in PowerShell — if it prints <code>Python 3.12.x</code>, skip to the next step.` },
       { type: 'instruction', label: 'Download and install', html: `<ol>
 <li>Go to <a href="https://www.python.org/downloads/release/python-3128/" target="_blank" style="color:var(--amber)">python.org/downloads/release/python-3128</a></li>
 <li>Download <strong>Windows installer (64-bit)</strong></li>
-<li>Run the installer — <strong>check "Add python.exe to PATH"</strong> before clicking Install</li>
+<li>Run the installer — you can leave "Add python.exe to PATH" unchecked if another Python already owns it</li>
 </ol>` },
-      { type: 'instruction', label: 'Open a new PowerShell window and verify', lang: 'powershell', code: `python --version` },
+      { type: 'instruction', label: 'Verify with the Python Launcher (open a new PowerShell window)', lang: 'powershell', code: `py -3.12 --version` },
       { type: 'verify', code: `Python 3.12.x` },
-      { type: 'callout', html: `If you see 3.13+ or "not recognised", the PATH was not set. Re-run the installer → Modify → tick "Add Python to environment variables".` },
+      { type: 'callout', html: `The <code>py</code> launcher selects the right version regardless of which Python owns your PATH. Subsequent steps use <code>py -3.12</code> for the same reason.` },
     ],
   },
 
@@ -75,7 +77,7 @@ To reactivate in a new terminal: <code>source .venv/bin/activate</code>` },
     ],
     windows: [
       { type: 'instruction', label: 'Run in PowerShell', lang: 'powershell',
-        code: `cd C:\\path\\to\\Brelly\npython -m venv .venv\n.venv\\Scripts\\Activate.ps1` },
+        code: `cd C:\\path\\to\\Brelly\npy -3.12 -m venv .venv\n.venv\\Scripts\\Activate.ps1` },
       { type: 'callout', html: `If you get an error about execution policy, run this once first:<br><br>
 <code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code><br><br>
 To deactivate later: <code>deactivate</code><br>
