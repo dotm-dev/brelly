@@ -186,7 +186,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
 <li>Download <code>gltfpack-macos</code> from the latest release</li>
 <li>Rename it and move it onto your PATH:</li>
 </ol>` },
-      { type: 'instruction', label: 'Install', lang: 'bash', code: `mv ~/Downloads/gltfpack /usr/local/bin/gltfpack\nchmod +x /usr/local/bin/gltfpack` },
+      { type: 'instruction', label: 'Install', lang: 'bash', code: `sudo mv ~/Downloads/gltfpack /usr/local/bin/gltfpack\nsudo chmod +x /usr/local/bin/gltfpack` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gltfpack --version` },
     ],
     windows: [
