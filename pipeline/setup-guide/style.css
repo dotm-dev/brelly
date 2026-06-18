@@ -364,6 +364,32 @@ body {
 #done-screen h2 { font-size: 24px; font-weight: 700; color: var(--text-1); }
 #done-screen p  { font-size: 14px; color: var(--text-3); max-width: 420px; line-height: 1.7; }
 
+/* ── Per-step precheck ── */
+.precheck {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.precheck summary {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--surface-2);
+  list-style: none;
+  user-select: none;
+}
+.precheck summary::-webkit-details-marker { display: none; }
+.precheck summary::before { content: '▶  '; font-size: 9px; }
+.precheck[open] summary::before { content: '▼  '; }
+.precheck-body { padding: 16px; background: var(--surface-1); }
+.precheck-body .code-block  { margin-bottom: 12px; }
+.precheck-body .verify-block { margin-bottom: 0; }
+
 /* ── System checker ── */
 .checker-input { margin-bottom: 20px; }
 .checker-textarea {

@@ -121,6 +121,31 @@ function renderSidebar(currentIndex) {
   }).join('');
 }
 
+// ── Precheck renderer ─────────────────────────────────────────────────────
+function renderPrecheck(step, os) {
+  const pc = step.precheck;
+  if (!pc) return '';
+  const check = pc.macos !== undefined ? pc[os] : pc; // OS-specific or shared
+  if (!check) return '';
+  const lang = check.lang === 'powershell' ? 'powershell' : 'bash';
+  return `<details class="precheck">
+    <summary>Already have this installed? Check first</summary>
+    <div class="precheck-body">
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">${lang}</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <div class="code-body">${escHtml(check.code)}</div>
+      </div>
+      <div class="verify-block">
+        <div class="verify-label">✓ If already installed, you should see</div>
+        <div class="code-body">${escHtml(check.verify)}</div>
+      </div>
+    </div>
+  </details>`;
+}
+
 // ── Step renderer ─────────────────────────────────────────────────────────
 function renderStep(i) {
   setStep(i);
@@ -137,6 +162,7 @@ function renderStep(i) {
     <div class="step-tag">Step ${i + 1} of ${STEPS.length}</div>
     <div class="step-title">${escHtml(step.title)}</div>
     <div class="step-desc">${escHtml(step.desc)}</div>
+    ${renderPrecheck(step, os)}
     ${blocks.map(renderBlock).join('')}`;
 
   renderSidebar(i);

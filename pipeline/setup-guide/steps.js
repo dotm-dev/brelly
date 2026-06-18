@@ -19,6 +19,10 @@ const STEPS = [
   {
     title: 'Install package manager',
     desc:  'The package manager lets you install system tools like GDAL and Python with a single command.',
+    precheck: {
+      macos:   { lang: 'bash',        code: `brew --version`,   verify: `Homebrew 4.x.x` },
+      windows: null,
+    },
     macos: [
       { type: 'instruction', label: 'Run in terminal', lang: 'bash',
         code: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` },
@@ -37,6 +41,10 @@ const STEPS = [
   {
     title: 'Install Python 3.12',
     desc:  'GDAL binary wheels are only available for Python 3.10–3.12. If you already have a different version, that\'s fine — 3.12 installs alongside it and this guide uses it explicitly.',
+    precheck: {
+      macos:   { lang: 'bash',        code: `python3.12 --version`, verify: `Python 3.12.x` },
+      windows: { lang: 'powershell',  code: `py -3.12 --version`,   verify: `Python 3.12.x` },
+    },
     macos: [
       { type: 'instruction', label: 'Check what Python versions you currently have', lang: 'bash', code: `python3 --version        # active default\npython3.12 --version     # 3.12 specifically (error = not installed)` },
       { type: 'callout', html: `If <code>python3.12 --version</code> already prints <code>Python 3.12.x</code>, skip to the next step. Whatever <code>python3</code> points to is left untouched — this guide always calls <code>python3.12</code> explicitly.` },
@@ -63,6 +71,10 @@ const STEPS = [
   {
     title: 'Install GDAL',
     desc:  'GDAL is the geospatial library used to read map data files.',
+    precheck: {
+      macos:   { lang: 'bash',       code: `gdal-config --version`, verify: `3.x.x` },
+      windows: { lang: 'powershell', code: `py -3.12 -c "from osgeo import gdal; print(gdal.__version__)"`, verify: `3.x.x` },
+    },
     macos: [
       { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install gdal` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gdal-config --version` },
@@ -85,6 +97,10 @@ const STEPS = [
   {
     title: 'Create a virtual environment',
     desc:  'A virtual environment keeps the pipeline\'s Python packages isolated from the rest of your system — so nothing conflicts and nothing breaks when you update other tools.',
+    precheck: {
+      macos:   { lang: 'bash',       code: `ls .venv/bin/python3`,           verify: `.venv/bin/python3` },
+      windows: { lang: 'powershell', code: `Test-Path .venv\\Scripts\\python.exe`, verify: `True` },
+    },
     macos: [
       { type: 'instruction', label: 'Run in terminal', lang: 'bash',
         code: `cd /path/to/Brelly\npython3.12 -m venv .venv\nsource .venv/bin/activate` },
@@ -108,6 +124,10 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Install Python dependencies',
     desc:  'Install the Python packages the pipeline uses for reading geospatial data, coordinate transforms, and geometry operations.',
+    precheck: {
+      macos:   { lang: 'bash',       code: `.venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy; print('OK')"`, verify: `OK` },
+      windows: { lang: 'powershell', code: `.venv\\Scripts\\python.exe -c "from osgeo import gdal; import pyproj, shapely, numpy; print('OK')"`, verify: `OK` },
+    },
     macos: [
       { type: 'instruction', label: 'Run in terminal — from the Brelly project root, venv active', lang: 'bash',
         code: `cd /path/to/Brelly\npip install -r pipeline/requirements.txt` },
@@ -131,6 +151,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Install Blender',
     desc:  'Blender bakes 3-D meshes for terrain, roads, and buildings. Without it the pipeline still runs but produces empty placeholder geometry.',
+    precheck: { lang: 'bash', code: `blender --version`, verify: `Blender 4.x.x` },
     macos: [
       { type: 'instruction', label: 'Download and install', html: `<ol>
 <li>Go to <a href="https://www.blender.org/download/" target="_blank" style="color:var(--amber)">blender.org/download</a></li>
@@ -162,6 +183,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Install gltfpack (optional)',
     desc:  'gltfpack compresses the .glb mesh files produced by the pipeline. Skip this step if you don\'t need smaller output files — the pipeline will warn but still run.',
+    precheck: { lang: 'bash', code: `gltfpack --version`, verify: `meshoptimizer ...` },
     macos: [
       { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install meshoptimizer` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gltfpack --version` },
@@ -182,6 +204,10 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Download source data',
     desc:  'The pipeline needs two datasets from swisstopo — Switzerland\'s federal geospatial authority. Both are free to download.',
+    precheck: {
+      macos:   { lang: 'bash',       code: `ls data/alti3d.tif data/swissTLM3D.gpkg`,                            verify: `data/alti3d.tif\ndata/swissTLM3D.gpkg` },
+      windows: { lang: 'powershell', code: `Test-Path data\\alti3d.tif; Test-Path data\\swissTLM3D.gpkg`, verify: `True\nTrue` },
+    },
     macos: [],
     windows: [],
     shared: [
@@ -203,6 +229,10 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Create a map config',
     desc:  'Each map area needs a JSON config file that defines its location, size, and race layout. Copy the example and fill in your values.',
+    precheck: {
+      macos:   { lang: 'bash',       code: `ls pipeline/config/*.json | grep -v example`,                                    verify: `pipeline/config/my_area.json` },
+      windows: { lang: 'powershell', code: `Get-ChildItem pipeline\\config\\*.json | Where-Object Name -ne example.json`, verify: `my_area.json` },
+    },
     macos: [
       { type: 'instruction', label: 'Copy the example config', lang: 'bash',
         code: `cp pipeline/config/example.json pipeline/config/my_area.json` },
@@ -259,6 +289,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Run the tests',
     desc:  'Verify the pipeline code is working correctly. All tests should pass with or without GDAL and Blender installed.',
+    precheck: { lang: 'bash', code: `pytest pipeline/tests/ --tb=no -q`, verify: `25 passed` },
     macos: [
       { type: 'instruction', label: 'Run in terminal (venv must be active)', lang: 'bash',
         code: `pytest pipeline/tests/` },
