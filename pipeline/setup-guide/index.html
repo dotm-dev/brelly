@@ -479,7 +479,7 @@ const STEPS = [
   // ── Step 3 ──────────────────────────────────────────────────────────────
   {
     title: 'Install GDAL',
-    desc:  'GDAL is the geospatial library used to read map data files. The Python bindings require it to be installed at the system level first.',
+    desc:  'GDAL is the geospatial library used to read map data files.',
     macos: [
       { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install gdal` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gdal-config --version` },
@@ -582,6 +582,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
     macos: [
       { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install meshoptimizer` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gltfpack --version` },
+      { type: 'callout', html: `If <code>brew install meshoptimizer</code> fails, download a prebuilt binary from <a href="https://github.com/zeux/meshoptimizer/releases" target="_blank" style="color:var(--amber)">github.com/zeux/meshoptimizer/releases</a> and place <code>gltfpack</code> somewhere on your PATH (e.g. <code>/usr/local/bin/gltfpack</code>).` },
     ],
     windows: [
       { type: 'instruction', label: 'Download and install', html: `<ol>
@@ -631,11 +632,13 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
       { type: 'instruction', label: 'Open the file and edit these fields', html: `<table style="width:100%;border-collapse:collapse;font-size:13px">
 <tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 8px;color:var(--text-3);font-weight:600">Field</th><th style="text-align:left;padding:6px 8px;color:var(--text-3);font-weight:600">What to set</th></tr>
 <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">name</td><td style="padding:6px 8px;color:var(--text-3)">Short ID, no spaces — becomes the output folder name</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">displayName</td><td style="padding:6px 8px;color:var(--text-3)">Human-readable name shown in the UI</td></tr>
 <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">center_e</td><td style="padding:6px 8px;color:var(--text-3)">LV95 easting of your map centre</td></tr>
 <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">center_n</td><td style="padding:6px 8px;color:var(--text-3)">LV95 northing of your map centre</td></tr>
 <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">radius_m</td><td style="padding:6px 8px;color:var(--text-3)">Half-width in metres (500 = 1 km × 1 km)</td></tr>
 <tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">base_elevation</td><td style="padding:6px 8px;color:var(--text-3)">Approximate ground elevation at centre (metres)</td></tr>
-<tr><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">source_data</td><td style="padding:6px 8px;color:var(--text-3)">Paths to alti3d.tif and swissTLM3D.gpkg</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">source_data.dem</td><td style="padding:6px 8px;color:var(--text-3)">Path to your alti3D GeoTIFF</td></tr>
+<tr><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">source_data.tlm</td><td style="padding:6px 8px;color:var(--text-3)">Path to your swissTLM3D GeoPackage</td></tr>
 </table>` },
       { type: 'callout', html: `To find LV95 coordinates for a location: go to <a href="https://map.geo.admin.ch" target="_blank" style="color:var(--amber)">map.geo.admin.ch</a> and right-click any point to copy coordinates.` },
     ],
