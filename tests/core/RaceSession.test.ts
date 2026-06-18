@@ -104,6 +104,7 @@ describe('RaceSession', () => {
     expect(session.ghostFrames.length).toBeGreaterThan(0)
     session.reset()
     expect(session.status).toBe('idle')
+    expect(session.ghostFrames.length).toBe(0)
   })
 
   it('persists best time to localStorage on finish', () => {

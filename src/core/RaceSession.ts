@@ -82,6 +82,7 @@ export class RaceSession {
   reset(): void {
     this._status = 'idle'
     this._elapsedMs = 0
+    this._startTimeMs = 0
     this._ghostFrames = []
     this._nextCheckpointOrder = 0
     this._splitTimesMs = []
@@ -89,10 +90,14 @@ export class RaceSession {
   }
 
   private persistBestTime(timeMs: number): void {
-    const key = `bestTime_${this.model.manifest.name}`
-    const existing = localStorage.getItem(key)
-    if (existing === null || timeMs < Number(existing)) {
-      localStorage.setItem(key, String(timeMs))
+    try {
+      const key = `bestTime_${this.model.manifest.name}`
+      const existing = localStorage.getItem(key)
+      if (existing === null || timeMs < Number(existing)) {
+        localStorage.setItem(key, String(timeMs))
+      }
+    } catch {
+      // localStorage unavailable (private browsing, quota exceeded) — silently skip
     }
   }
 }
