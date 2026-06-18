@@ -32,6 +32,7 @@ export class BabylonRenderer implements IRenderer {
     window.addEventListener('resize', this.resizeHandler)
     this.setupLights()
     this.setupFallbackGround()
+    this.setupOrbitCamera()
   }
 
   private setupLights(): void {
@@ -66,7 +67,7 @@ export class BabylonRenderer implements IRenderer {
   }
 
   // Available for use when no vehicle is spawned
-  private _setupOrbitCamera(): void {
+  private setupOrbitCamera(): void {
     const cam = new ArcRotateCamera('orbit', -Math.PI / 2, Math.PI / 3, 20, Vector3.Zero(), this.scene)
     cam.lowerRadiusLimit = 5
     cam.upperRadiusLimit = 100
@@ -76,8 +77,9 @@ export class BabylonRenderer implements IRenderer {
   async loadMap(pack: MapPack): Promise<void> {
     this.scene.getMeshByName('fallback-ground')?.dispose()
 
+    const basePath = pack.basePath.replace(/\/$/, '')
     const load = (path: string) =>
-      SceneLoader.ImportMeshAsync('', pack.basePath + '/', path, this.scene)
+      SceneLoader.ImportMeshAsync('', basePath + '/', path, this.scene)
 
     await Promise.all([
       load(pack.manifest.assets.terrain),
