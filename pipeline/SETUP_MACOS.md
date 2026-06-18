@@ -90,7 +90,7 @@ blender --version   # Blender 4.x.x
 Compresses `.glb` output. Skip if you don't need it.
 
 ```bash
-brew install meshoptimizer
+brew install gltfpack
 gltfpack --version
 ```
 

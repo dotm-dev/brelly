@@ -181,7 +181,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
     desc:  'gltfpack compresses the .glb mesh files produced by the pipeline. Skip this step if you don\'t need smaller output files — the pipeline will warn but still run.',
     precheck: { lang: 'bash', code: `gltfpack --version`, verify: `meshoptimizer ...` },
     macos: [
-      { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install meshoptimizer` },
+      { type: 'instruction', label: 'Run in terminal', lang: 'bash', code: `brew install gltfpack` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gltfpack --version` },
       { type: 'callout', html: `If <code>brew install meshoptimizer</code> fails, download a prebuilt binary from <a href="https://github.com/zeux/meshoptimizer/releases" target="_blank" style="color:var(--amber)">github.com/zeux/meshoptimizer/releases</a> and place <code>gltfpack</code> somewhere on your PATH (e.g. <code>/usr/local/bin/gltfpack</code>).` },
     ],
