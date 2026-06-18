@@ -8,7 +8,6 @@
     "noImplicitOverride": true,
     "lib": ["ES2022", "DOM"],
     "outDir": "dist",
-    "rootDir": "src",
     "baseUrl": ".",
     "paths": {
       "@core/*": ["src/core/*"],

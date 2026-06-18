@@ -1,4 +1,6 @@
 node_modules/
 dist/
-maps/
+maps/*/terrain.glb
+maps/*/roads.glb
+maps/*/buildings.glb
 .superpowers/
