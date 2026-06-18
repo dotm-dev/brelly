@@ -72,4 +72,16 @@ describe('InputHandler', () => {
     handler.update()
     expect(state.throttle).toBe(0)
   })
+
+  it('sets throttle to 1 when KeyW is pressed', () => {
+    fireKey('keydown', 'KeyW')
+    handler.update()
+    expect(state.throttle).toBe(1)
+  })
+
+  it('sets steer to -1 when KeyA is pressed', () => {
+    fireKey('keydown', 'KeyA')
+    handler.update()
+    expect(state.steer).toBe(-1)
+  })
 })
