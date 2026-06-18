@@ -12,11 +12,14 @@ All commands run in **PowerShell** (`Win + X` → Terminal).
 
 GDAL wheels are only available for 3.10–3.12 — 3.14+ won't work. If you already have a different version, that's fine — 3.12 installs alongside it.
 
-Already have 3.12? Check first:
+Check what you have first:
 
 ```powershell
-py -3.12 --version   # already installed? skip the installer below
+python --version     # active default (may error if nothing on PATH)
+py --list            # all installed versions known to the py launcher
 ```
+
+If the list includes `-3.12`, skip the installer below. Whatever `python` points to is left as-is.
 
 If not installed:
 
