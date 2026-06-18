@@ -743,8 +743,144 @@ document.getElementById('os-switch-btn').addEventListener('click', () => {
   renderOSPicker();
 });
 
-// Stub — replaced by full implementation in Task 4
-function renderStep(i) { /* implemented in Task 4 */ }
+// ── Block renderers ───────────────────────────────────────────────────────
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderBlock(block) {
+  if (block.type === 'instruction') {
+    const inner = block.code
+      ? `<div class="code-block">
+           <div class="code-header">
+             <span class="code-lang">${block.lang || 'bash'}</span>
+             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+           </div>
+           <div class="code-body">${escHtml(block.code)}</div>
+         </div>`
+      : `<div class="instruction-body">${block.html}</div>`;
+    return `<div class="instruction">
+              <div class="instruction-label">${escHtml(block.label)}</div>
+              ${inner}
+            </div>`;
+  }
+  if (block.type === 'callout') {
+    return `<div class="callout">${block.html}</div>`;
+  }
+  if (block.type === 'verify') {
+    return `<div class="verify-block">
+              <div class="verify-label">✓ Expected output</div>
+              <div class="code-body">${escHtml(block.code)}</div>
+            </div>`;
+  }
+  return '';
+}
+
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('.code-body').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+
+// ── Sidebar renderer ──────────────────────────────────────────────────────
+function renderSidebar(currentIndex) {
+  const done = getDone();
+  const total = STEPS.length;
+  const doneCount = done.length;
+
+  document.getElementById('progress-fill').style.width = `${(doneCount / total) * 100}%`;
+  document.getElementById('progress-label').textContent = `${doneCount} of ${total} complete`;
+
+  document.getElementById('step-list').innerHTML = STEPS.map((step, i) => {
+    const isDone   = done.includes(i);
+    const isActive = i === currentIndex;
+    const cls      = isDone ? 'done' : isActive ? 'active' : '';
+    const num      = isDone ? '✓' : i + 1;
+    return `<li class="step-item ${cls}" onclick="goToStep(${i})">
+              <div class="step-num">${num}</div>
+              <div class="step-label">${escHtml(step.title)}</div>
+            </li>`;
+  }).join('');
+}
+
+// ── Step renderer ─────────────────────────────────────────────────────────
+function renderStep(i) {
+  setStep(i);
+  const os   = getOS();
+  const step = STEPS[i];
+
+  const osBlocks     = (step[os] || []);
+  const sharedBlocks = (step.shared || []);
+  const blocks = (osBlocks.length === 0 && sharedBlocks.length > 0)
+    ? sharedBlocks
+    : [...osBlocks, ...sharedBlocks];
+
+  const blocksHtml = blocks.map(renderBlock).join('');
+
+  document.getElementById('content').innerHTML = `
+    <div class="step-tag">Step ${i + 1} of ${STEPS.length}</div>
+    <div class="step-title">${escHtml(step.title)}</div>
+    <div class="step-desc">${escHtml(step.desc)}</div>
+    ${blocksHtml}`;
+
+  renderSidebar(i);
+  renderFooter(i);
+  document.getElementById('content').scrollTop = 0;
+}
+
+// ── Footer renderer ───────────────────────────────────────────────────────
+function renderFooter(index) {
+  const info = document.getElementById('nav-step-info');
+  const prev = document.getElementById('btn-prev');
+
+  info.textContent = `Step ${index + 1} of ${STEPS.length}`;
+
+  prev.style.visibility = index === 0 ? 'hidden' : 'visible';
+  if (index > 0) {
+    document.getElementById('prev-label').textContent = STEPS[index - 1].title;
+  }
+
+  document.getElementById('next-label').textContent =
+    index === STEPS.length - 1 ? 'Finish' : STEPS[index + 1].title;
+}
+
+function goToStep(index) {
+  renderStep(index);
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
+document.getElementById('btn-prev').addEventListener('click', () => {
+  const i = getStep();
+  if (i > 0) renderStep(i - 1);
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  const i = getStep();
+  markDone(i);
+  if (i < STEPS.length - 1) {
+    renderStep(i + 1);
+  } else {
+    renderDone();
+  }
+});
+
+// ── Done screen ───────────────────────────────────────────────────────────
+function renderDone() {
+  markDone(STEPS.length - 1);
+  renderSidebar(STEPS.length);
+  document.getElementById('content').innerHTML = `
+    <div id="done-screen">
+      <div class="done-icon">🏁</div>
+      <h2>You're all set!</h2>
+      <p>The pipeline is installed and ready. Run it against any map config and the output will land in <code>maps/&lt;name&gt;/</code>.</p>
+    </div>`;
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('btn-prev').style.visibility = 'visible';
+  document.getElementById('prev-label').textContent = STEPS[STEPS.length - 1].title;
+  document.getElementById('nav-step-info').textContent = 'Complete ✓';
+}
 
 // ── Boot ──────────────────────────────────────────────────────────────────
 function restoreSession(os) {
