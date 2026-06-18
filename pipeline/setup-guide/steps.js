@@ -42,20 +42,16 @@ const STEPS = [
     title: 'Install Python 3.12',
     desc:  'GDAL binary wheels are only available for Python 3.10–3.12. If you already have a different version, that\'s fine — 3.12 installs alongside it and this guide uses it explicitly.',
     precheck: {
-      macos:   { lang: 'bash',        code: `python3.12 --version`, verify: `Python 3.12.x` },
-      windows: { lang: 'powershell',  code: `py -3.12 --version`,   verify: `Python 3.12.x` },
+      macos:   { lang: 'bash',       code: `python3 --version      # active default\npython3.12 --version  # 3.12 specifically`, verify: `Python 3.x.x  # whatever is active\nPython 3.12.x  # must print this to skip` },
+      windows: { lang: 'powershell', code: `python --version  # active default\npy --list        # all installed versions`, verify: `Python 3.x.x  # whatever is active\n-3.12-64  # must appear to skip` },
     },
     macos: [
-      { type: 'instruction', label: 'Check what Python versions you currently have', lang: 'bash', code: `python3 --version        # active default\npython3.12 --version     # 3.12 specifically (error = not installed)` },
-      { type: 'callout', html: `If <code>python3.12 --version</code> already prints <code>Python 3.12.x</code>, skip to the next step. Whatever <code>python3</code> points to is left untouched — this guide always calls <code>python3.12</code> explicitly.` },
       { type: 'instruction', label: 'Install alongside any existing Python', lang: 'bash', code: `brew install python@3.12` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `python3.12 --version` },
       { type: 'verify', code: `Python 3.12.x` },
       { type: 'callout', html: `Your existing Python and any other tools are unaffected. All commands in this guide use <code>python3.12</code> explicitly, never the system default.` },
     ],
     windows: [
-      { type: 'instruction', label: 'Check what Python versions you currently have', lang: 'powershell', code: `python --version     # active default (may error if nothing on PATH)\npy --list            # all installed versions known to the py launcher` },
-      { type: 'callout', html: `If the list includes <code>-3.12</code>, skip to the next step — 3.12 is already installed. Whatever version <code>python</code> points to is left as-is; this guide uses <code>py -3.12</code> throughout.` },
       { type: 'instruction', label: 'Download and install', html: `<ol>
 <li>Go to <a href="https://www.python.org/downloads/release/python-3128/" target="_blank" style="color:var(--amber)">python.org/downloads/release/python-3128</a></li>
 <li>Download <strong>Windows installer (64-bit)</strong></li>
