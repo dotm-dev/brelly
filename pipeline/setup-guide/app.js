@@ -76,6 +76,14 @@ function renderBlock(block) {
     // trusted author HTML — block.html is a static string literal in STEPS, never from external input
     return `<div class="callout">${block.html}</div>`;
   }
+  if (block.type === 'checker-input') {
+    return `<div class="checker-input">
+              <div class="instruction-label">Paste the output here</div>
+              <textarea id="checker-output" class="checker-textarea"
+                placeholder="HOMEBREW=ok&#10;PYTHON312=missing&#10;GDAL_SYS=ok&#10;..." spellcheck="false"></textarea>
+              <button class="apply-btn" onclick="applyCheckerOutput()">Apply &amp; jump to first incomplete step →</button>
+            </div>`;
+  }
   if (block.type === 'verify') {
     return `<div class="verify-block">
               <div class="verify-label">✓ Expected output</div>
@@ -176,6 +184,42 @@ function renderDone() {
   document.getElementById('btn-prev').style.visibility     = 'visible';
   document.getElementById('prev-label').textContent        = STEPS[STEPS.length - 1].title;
   document.getElementById('nav-step-info').textContent     = 'Complete ✓';
+}
+
+// ── Checker ───────────────────────────────────────────────────────────────
+// Step index mapping: STEPS[0]=checker, STEPS[1]=pkg-mgr, STEPS[2]=python, ...
+const CHECKER_MAP = {
+  macos:   { HOMEBREW: 1, PYTHON312: 2, GDAL_SYS: 3, VENV: 4, DEPS: 5, BLENDER: 6, GLTFPACK: 7 },
+  windows: {              PYTHON312: 2, GDAL_PY:  3, VENV: 4, DEPS: 5, BLENDER: 6, GLTFPACK: 7 },
+};
+
+function applyCheckerOutput() {
+  const text = document.getElementById('checker-output').value.trim();
+  if (!text) return;
+
+  const os = getOS();
+  const results = Object.fromEntries(
+    text.split('\n').map(l => l.trim().split('=')).filter(p => p.length === 2)
+  );
+
+  const done = new Set([0]); // step 0 (this step) is done
+
+  // On Windows step 1 (package manager) is a no-op — always satisfied
+  if (os === 'windows') done.add(1);
+
+  const map = CHECKER_MAP[os] || {};
+  for (const [key, stepIndex] of Object.entries(map)) {
+    if (results[key] === 'ok') done.add(stepIndex);
+  }
+  // Step 8 (source data) needs both files
+  if (results.DATA_DEM === 'ok' && results.DATA_TLM === 'ok') done.add(8);
+  // Step 9 (config)
+  if (results.CONFIG === 'ok') done.add(9);
+
+  setDone([...done]);
+
+  const first = [...Array(STEPS.length).keys()].find(i => !done.has(i)) ?? STEPS.length - 1;
+  renderStep(first);
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────

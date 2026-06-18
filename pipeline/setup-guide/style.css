@@ -364,6 +364,40 @@ body {
 #done-screen h2 { font-size: 24px; font-weight: 700; color: var(--text-1); }
 #done-screen p  { font-size: 14px; color: var(--text-3); max-width: 420px; line-height: 1.7; }
 
+/* ── System checker ── */
+.checker-input { margin-bottom: 20px; }
+.checker-textarea {
+  display: block;
+  width: 100%;
+  height: 180px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 13px;
+  color: var(--code-fg);
+  line-height: 1.7;
+  resize: vertical;
+  margin-bottom: 12px;
+  outline: none;
+}
+.checker-textarea::placeholder { color: var(--text-5); }
+.checker-textarea:focus { border-color: var(--amber); }
+.apply-btn {
+  background: var(--amber);
+  color: var(--bg);
+  border: none;
+  border-radius: 7px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.apply-btn:hover { background: var(--amber-dim); }
+
 /* ── Footer nav ── */
 #footer-nav {
   border-top: 1px solid var(--border);
