@@ -95,8 +95,8 @@ No Homebrew formula exists — install the binary directly:
 2. Download `gltfpack-macos` from the latest release
 
 ```bash
-mv ~/Downloads/gltfpack-macos /usr/local/bin/gltfpack
-chmod +x /usr/local/bin/gltfpack
+mv ~/Downloads/gltfpack-macos "$(brew --prefix)/bin/gltfpack"
+chmod +x "$(brew --prefix)/bin/gltfpack"
 gltfpack --version
 ```
 
