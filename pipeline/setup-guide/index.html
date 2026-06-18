@@ -28,6 +28,7 @@
   --sidebar-w: 240px;
   --topbar-h:  52px;
   --footer-h:  64px;
+  --content-w: 860px;
 }
 
 body {
@@ -184,7 +185,10 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 40px 52px;
-  max-width: 800px;
+}
+#content-inner {
+  max-width: var(--content-w);
+  margin: 0 auto;
 }
 
 /* ── OS picker ── */
@@ -373,10 +377,24 @@ body {
   padding: 0 52px;
   height: var(--footer-h);
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   background: var(--surface-1);
   flex-shrink: 0;
   display: none;
+}
+#footer-inner {
+  width: 100%;
+  max-width: var(--content-w);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+#nav-step-info {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 .nav-btn {
   display: flex;
@@ -402,7 +420,7 @@ body {
   color: var(--bg);
 }
 .btn-next:hover { background: var(--amber-dim); }
-#nav-step-info { font-size: 12px; color: var(--text-5); }
+#nav-step-info { font-size: 12px; color: var(--text-5); pointer-events: none; }
 </style>
 </head>
 <body>
@@ -425,12 +443,16 @@ body {
 
   <div id="main">
     <div id="content">
-      <!-- OS picker shown first; replaced by step content after OS selected -->
+      <div id="content-inner">
+        <!-- OS picker shown first; replaced by step content after OS selected -->
+      </div>
     </div>
     <div id="footer-nav">
-      <button class="nav-btn btn-prev" id="btn-prev">← <span id="prev-label"></span></button>
-      <span id="nav-step-info"></span>
-      <button class="nav-btn btn-next" id="btn-next"><span id="next-label"></span> →</button>
+      <div id="footer-inner">
+        <button class="nav-btn btn-prev" id="btn-prev">← <span id="prev-label"></span></button>
+        <span id="nav-step-info"></span>
+        <button class="nav-btn btn-next" id="btn-next"><span id="next-label"></span> →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -706,7 +728,7 @@ function markDone(i)   { const d = getDone(); if (!d.includes(i)) { d.push(i); s
 
 // ── OS picker ─────────────────────────────────────────────────────────────
 function renderOSPicker() {
-  document.getElementById('content').innerHTML = `
+  document.getElementById('content-inner').innerHTML = `
     <div id="os-picker">
       <h2>Choose your operating system</h2>
       <p>Commands and instructions will be tailored to your platform.</p>
@@ -822,7 +844,7 @@ function renderStep(i) {
 
   const blocksHtml = blocks.map(renderBlock).join('');
 
-  document.getElementById('content').innerHTML = `
+  document.getElementById('content-inner').innerHTML = `
     <div class="step-tag">Step ${i + 1} of ${STEPS.length}</div>
     <div class="step-title">${escHtml(step.title)}</div>
     <div class="step-desc">${escHtml(step.desc)}</div>
@@ -854,9 +876,11 @@ function goToStep(index) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────
+function unmarkDone(i) { const d = getDone().filter(n => n !== i); setDone(d); }
+
 document.getElementById('btn-prev').addEventListener('click', () => {
   const i = getStep();
-  if (i > 0) renderStep(i - 1);
+  if (i > 0) { unmarkDone(i - 1); renderStep(i - 1); }
 });
 
 document.getElementById('btn-next').addEventListener('click', () => {
@@ -873,7 +897,7 @@ document.getElementById('btn-next').addEventListener('click', () => {
 function renderDone() {
   markDone(STEPS.length - 1);
   renderSidebar(STEPS.length);
-  document.getElementById('content').innerHTML = `
+  document.getElementById('content-inner').innerHTML = `
     <div id="done-screen">
       <div class="done-icon">🏁</div>
       <h2>You're all set!</h2>
