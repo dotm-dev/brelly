@@ -33,7 +33,7 @@ export class GameApp {
   private inputHandler: InputHandler
   private hud: HUD | null = null
   private loop: GameLoop | null = null
-  private rafId: number | null = null
+
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.bus = new EventBus()
@@ -113,7 +113,6 @@ export class GameApp {
   }
 
   dispose(): void {
-    if (this.rafId !== null) cancelAnimationFrame(this.rafId)
     this.inputHandler.dispose()
     this.hud?.dispose()
     this.renderer.dispose()
