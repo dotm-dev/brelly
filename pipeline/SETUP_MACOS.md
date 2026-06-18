@@ -89,12 +89,16 @@ blender --version   # Blender 4.x.x
 
 Compresses `.glb` output. Skip if you don't need it.
 
+No Homebrew formula exists — install the binary directly:
+
+1. Go to https://github.com/zeux/meshoptimizer/releases
+2. Download `gltfpack-macos` from the latest release
+
 ```bash
-brew install gltfpack
+mv ~/Downloads/gltfpack-macos /usr/local/bin/gltfpack
+chmod +x /usr/local/bin/gltfpack
 gltfpack --version
 ```
-
-If brew doesn't find it, grab a prebuilt binary from https://github.com/zeux/meshoptimizer/releases and place it on your PATH.
 
 ## 8. Download source data
 
