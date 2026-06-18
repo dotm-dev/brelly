@@ -4,33 +4,13 @@ const STEPS = [
     title: 'System check',
     desc:  'Run this script from your Brelly project root to see what\'s already installed. Paste the output to pre-fill your progress and jump straight to the first missing step.',
     macos: [
-      { type: 'instruction', label: 'Run from the Brelly project root', lang: 'bash', code:
-`#!/usr/bin/env bash
-_chk() { "$@" &>/dev/null && echo ok || echo missing; }
-echo "HOMEBREW=$(_chk brew --version)"
-echo "PYTHON312=$(_chk python3.12 --version)"
-echo "GDAL_SYS=$(_chk gdal-config --version)"
-echo "VENV=$([ -f .venv/bin/python3 ] && echo ok || echo missing)"
-echo "DEPS=$(_chk .venv/bin/python3 -c 'from osgeo import gdal; import pyproj, shapely, numpy')"
-echo "BLENDER=$(_chk blender --version)"
-echo "GLTFPACK=$(_chk gltfpack --version)"
-echo "DATA_DEM=$([ -f data/alti3d.tif ] && echo ok || echo missing)"
-echo "DATA_TLM=$([ -f data/swissTLM3D.gpkg ] && echo ok || echo missing)"
-echo "CONFIG=$(ls pipeline/config/*.json 2>/dev/null | grep -v example.json | head -1 | grep -q . && echo ok || echo missing)"` },
+      { type: 'instruction', label: 'Run in terminal from the Brelly project root', lang: 'bash',
+        code: `bash pipeline/check_system.sh` },
       { type: 'checker-input' },
     ],
     windows: [
-      { type: 'instruction', label: 'Run from the Brelly project root', lang: 'powershell', code:
-`# Run from the Brelly project root
-"PYTHON312=$(py -3.12 --version 2>&1 | Out-Null; if ($LASTEXITCODE -eq 0) { 'ok' } else { 'missing' })"
-"GDAL_PY=$(py -3.12 -c 'from osgeo import gdal' 2>&1 | Out-Null; if ($LASTEXITCODE -eq 0) { 'ok' } else { 'missing' })"
-"VENV=$(if (Test-Path .venv\\Scripts\\python.exe) { 'ok' } else { 'missing' })"
-"DEPS=$(.venv\\Scripts\\python.exe -c 'from osgeo import gdal; import pyproj, shapely, numpy' 2>&1 | Out-Null; if ($LASTEXITCODE -eq 0) { 'ok' } else { 'missing' })"
-"BLENDER=$(if (Get-Command blender -EA 0) { 'ok' } else { 'missing' })"
-"GLTFPACK=$(if (Get-Command gltfpack -EA 0) { 'ok' } else { 'missing' })"
-"DATA_DEM=$(if (Test-Path data\\alti3d.tif) { 'ok' } else { 'missing' })"
-"DATA_TLM=$(if (Test-Path data\\swissTLM3D.gpkg) { 'ok' } else { 'missing' })"
-"CONFIG=$(if (Get-ChildItem pipeline\\config\\*.json -Exclude example.json -EA 0) { 'ok' } else { 'missing' })"` },
+      { type: 'instruction', label: 'Run in PowerShell from the Brelly project root', lang: 'powershell',
+        code: `.\\pipeline\\check_system.ps1` },
       { type: 'checker-input' },
     ],
   },
