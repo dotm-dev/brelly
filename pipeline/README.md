@@ -296,14 +296,14 @@ Test modules:
 
 ## Troubleshooting
 
-For installation issues (GDAL, Blender, pip errors) see [SETUP.md](SETUP.md).
+For installation issues (GDAL, Blender, pip errors) see [SETUP_MACOS.md](SETUP_MACOS.md) or [SETUP_WINDOWS.md](SETUP_WINDOWS.md).
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `WARNING: GDAL not available` | `gdal` Python bindings missing | See SETUP.md §3–5 |
-| `WARNING: Blender not found` | `blender` not on `PATH` | See SETUP.md §6 |
+| `WARNING: GDAL not available` | `gdal` Python bindings missing | macOS: SETUP_MACOS.md §3–4 · Windows: SETUP_WINDOWS.md §2–3 |
+| `WARNING: Blender not found` | `blender` not on `PATH` | macOS: SETUP_MACOS.md §6 · Windows: SETUP_WINDOWS.md §5 |
 | `WARNING: TLM source not found` | `source_data.tlm` path wrong | Check path in config JSON |
-| `WARNING: gltfpack not found` | gltfpack not installed | Non-fatal; see SETUP.md §7 |
+| `WARNING: gltfpack not found` | gltfpack not installed | Non-fatal — macOS: SETUP_MACOS.md §7 · Windows: SETUP_WINDOWS.md §6 |
 | `FAILED: scripts/XX_*.py exited with code N` | Unhandled error in that step | Check stdout lines above for the specific error |
 | `Road graph: 0 nodes, 0 edges` | Road layer missing from GeoPackage | Verify layer name is `tlm_strassen_strasse` |
 

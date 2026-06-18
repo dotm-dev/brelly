@@ -697,7 +697,7 @@ const LS_STEP = 'brelly-pipeline-step';
 const LS_DONE = 'brelly-pipeline-done';
 
 function getOS()       { return localStorage.getItem(LS_OS); }
-function getStep()     { return parseInt(localStorage.getItem(LS_STEP) || '0', 10); }
+function getStep()     { const n = parseInt(localStorage.getItem(LS_STEP) || '0', 10); return isNaN(n) ? 0 : Math.min(Math.max(0, n), STEPS.length - 1); }
 function getDone()     { try { return JSON.parse(localStorage.getItem(LS_DONE) || '[]'); } catch { return []; } }
 function setOS(os)     { localStorage.setItem(LS_OS, os); }
 function setStep(i)    { localStorage.setItem(LS_STEP, String(i)); }
@@ -891,7 +891,7 @@ function restoreSession(os) {
   document.getElementById('os-badge').style.display = 'flex';
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('footer-nav').style.display = 'flex';
-  renderStep(getStep());
+  if (getDone().length === STEPS.length) { renderDone(); } else { renderStep(getStep()); }
 }
 
 if (getOS()) {
