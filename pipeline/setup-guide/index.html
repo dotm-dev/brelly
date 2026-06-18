@@ -689,6 +689,66 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
     ],
   },
 ];
+
+// ── State ────────────────────────────────────────────────────────────────
+const LS_OS   = 'brelly-pipeline-os';
+const LS_STEP = 'brelly-pipeline-step';
+const LS_DONE = 'brelly-pipeline-done';
+
+function getOS()       { return localStorage.getItem(LS_OS); }
+function getStep()     { return parseInt(localStorage.getItem(LS_STEP) || '0', 10); }
+function getDone()     { return JSON.parse(localStorage.getItem(LS_DONE) || '[]'); }
+function setOS(os)     { localStorage.setItem(LS_OS, os); }
+function setStep(i)    { localStorage.setItem(LS_STEP, String(i)); }
+function setDone(arr)  { localStorage.setItem(LS_DONE, JSON.stringify(arr)); }
+function markDone(i)   { const d = getDone(); if (!d.includes(i)) { d.push(i); setDone(d); } }
+
+// ── OS picker ─────────────────────────────────────────────────────────────
+function renderOSPicker() {
+  document.getElementById('content').innerHTML = `
+    <div id="os-picker">
+      <h2>Choose your operating system</h2>
+      <p>Commands and instructions will be tailored to your platform.</p>
+      <div class="os-cards">
+        <div class="os-card" onclick="selectOS('macos')">
+          <div class="os-icon">🍎</div>
+          <h3>macOS</h3>
+          <p>Uses Homebrew</p>
+        </div>
+        <div class="os-card" onclick="selectOS('windows')">
+          <div class="os-icon">🪟</div>
+          <h3>Windows</h3>
+          <p>Uses PowerShell</p>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('footer-nav').style.display = 'none';
+  document.getElementById('os-badge').style.display = 'none';
+}
+
+function selectOS(os) {
+  setOS(os);
+  setStep(0);
+  setDone([]);
+  document.getElementById('os-label').textContent = os === 'macos' ? 'macOS' : 'Windows';
+  document.getElementById('os-badge').style.display = 'flex';
+  document.getElementById('sidebar').style.display = 'flex';
+  document.getElementById('footer-nav').style.display = 'flex';
+  renderStep(0);
+}
+
+document.getElementById('os-switch-btn').addEventListener('click', () => {
+  localStorage.removeItem(LS_OS);
+  renderOSPicker();
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+if (getOS()) {
+  selectOS(getOS());
+} else {
+  renderOSPicker();
+}
 </script>
 </body>
 </html>
