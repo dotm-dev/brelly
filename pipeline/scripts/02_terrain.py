@@ -139,8 +139,9 @@ def _load_road_segments_for_conform(config_dict: dict, bbox: dict) -> list:
                 continue
             raw = feat.GetField(obj_idx) if obj_idx >= 0 else None
             width = _WIDTHS.get(raw, 4.0)
+            base_elev = float(config_dict.get("base_elevation", 0.0))
             pts = [
-                (geom.GetX(i), geom.GetY(i), geom.GetZ(i) if geom.Is3D() else 0.0)
+                (geom.GetX(i), geom.GetY(i), (geom.GetZ(i) if geom.Is3D() else base_elev) - base_elev)
                 for i in range(geom.GetPointCount())
             ]
             if len(pts) >= 2:
