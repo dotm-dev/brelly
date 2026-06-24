@@ -51,25 +51,45 @@ def conform_to_roads(
             row_lo = max(0, int((min(ay, by) - pad - min_n) / cell_size))
             row_hi = min(rows - 1, int((max(ay, by) + pad - min_n) / cell_size) + 1)
 
-            for r in range(row_lo, row_hi + 1):
-                for c in range(col_lo, col_hi + 1):
-                    cell_e = min_e + c * cell_size
-                    cell_n = min_n + r * cell_size
-                    cx, cy, t = _closest_point_on_segment(cell_e, cell_n, ax, ay, bx, by)
-                    dist = math.hypot(cell_e - cx, cell_n - cy)
-                    road_z = az + t * (bz - az)
+            if col_lo > col_hi or row_lo > row_hi:
+                continue
 
-                    # outer boundary: blend extends blend_cells full cells beyond road edge
-                    # use blend_m + half_cell so the outermost cell centre gets non-zero weight
-                    outer = seg.half_width + blend_m + 0.5 * cell_size
-                    if dist <= seg.half_width:
-                        weight = 1.0
-                    elif dist < outer:
-                        t_blend = (dist - seg.half_width) / (blend_m + 0.5 * cell_size)
-                        weight = 0.5 * (1.0 + math.cos(math.pi * t_blend))
-                    else:
-                        continue
+            # Build coordinate grids for the sub-window (vectorised)
+            c_idx = np.arange(col_lo, col_hi + 1)
+            r_idx = np.arange(row_lo, row_hi + 1)
+            cell_e = min_e + c_idx * cell_size           # shape (W,)
+            cell_n = min_n + r_idx * cell_size           # shape (H,)
+            E, N = np.meshgrid(cell_e, cell_n)           # shape (H, W)
 
-                    target = arr[r, c] * (1.0 - weight) + road_z * weight
-                    if target > arr[r, c]:
-                        arr[r, c] = target
+            # Closest point on segment for every cell in sub-window
+            dx, dy = bx - ax, by - ay
+            seg_len_sq = dx * dx + dy * dy
+            if seg_len_sq < 1e-10:
+                t = np.zeros_like(E)
+            else:
+                t = np.clip(((E - ax) * dx + (N - ay) * dy) / seg_len_sq, 0.0, 1.0)
+
+            cx = ax + t * dx
+            cy = ay + t * dy
+            dist = np.hypot(E - cx, N - cy)
+            road_z = az + t * (bz - az)
+
+            # Compute weights: 1 inside corridor, cosine blend outside, 0 beyond.
+            # outer boundary extends blend_m + half_cell so the outermost cell centre
+            # gets a non-zero weight (matches original scalar implementation).
+            half_cell = 0.5 * cell_size
+            outer = seg.half_width + blend_m + half_cell
+            weight = np.where(
+                dist <= seg.half_width,
+                1.0,
+                np.where(
+                    dist < outer,
+                    0.5 * (1.0 + np.cos(np.pi * (dist - seg.half_width) / (blend_m + half_cell))),
+                    0.0,
+                ),
+            )
+
+            target = arr[row_lo:row_hi + 1, col_lo:col_hi + 1] * (1.0 - weight) + road_z * weight
+            # Only raise terrain, never lower
+            sub = arr[row_lo:row_hi + 1, col_lo:col_hi + 1]
+            np.maximum(sub, target, out=sub)
