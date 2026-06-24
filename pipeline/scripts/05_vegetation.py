@@ -106,6 +106,8 @@ def main(config_path: str) -> None:
                     e, n = pt.GetX(), pt.GetY()
                     elev = pt.GetZ() if pt.Is3D() else config.base_elevation
                     x, y, z = lv95_to_enu(e, n, elev, config)
+                    if abs(x) > config.radius_m or abs(z) > config.radius_m:
+                        continue
                     positions.append({"x": round(x, 2), "y": round(y, 2), "z": round(z, 2)})
                     if total > 0 and (j % max(1, total // 20) == 0 or j == total):
                         progress("loading trees", j, total)
@@ -132,8 +134,11 @@ def main(config_path: str) -> None:
                     quota = min(budget_share, density_cap)
                     lv95_pts = _scatter_in_polygon(geom, quota, config.base_elevation)
                     for e, n, _ in lv95_pts:
+                        x, y, z = lv95_to_enu(e, n, config.base_elevation, config)
+                        if abs(x) > config.radius_m or abs(z) > config.radius_m:
+                            continue
                         elev = _sample_dem(dem_ds, e, n, config.base_elevation)
-                        x, y, z = lv95_to_enu(e, n, elev, config)
+                        _, y, _ = lv95_to_enu(e, n, elev, config)
                         positions.append({"x": round(x, 2), "y": round(y, 2), "z": round(z, 2)})
 
         gdal.PopErrorHandler()
