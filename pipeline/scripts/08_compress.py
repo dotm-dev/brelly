@@ -23,21 +23,6 @@ def main(config_path: str) -> None:
         label = f"[{j}/{total}] {glb_path.name}"
         print(f"  {label}...", flush=True)
 
-        # Terrain gets an extra simplification pass first.
-        # -si 0.05 = keep 5% of triangles; -sa = aggressive (ok for terrain)
-        if glb_path.name == "terrain.glb":
-            simplified = glb_path.with_suffix(".simplified.glb")
-            r = subprocess.run(
-                [gltfpack, "-i", str(glb_path), "-o", str(simplified), "-si", "0.05", "-sa"],
-                capture_output=True, text=True,
-            )
-            if r.returncode == 0:
-                simplified.replace(glb_path)
-                print(f"  {label} simplified", flush=True)
-            else:
-                print(f"WARNING: simplification failed on {glb_path.name}: {r.stderr[:200]}")
-                simplified.unlink(missing_ok=True)
-
         # General quantisation + compression for all GLBs
         result = subprocess.run(
             [gltfpack, "-i", str(glb_path), "-o", str(glb_path), "-cc"],

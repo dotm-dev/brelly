@@ -30,8 +30,8 @@ import bpy
 import bmesh
 
 # How many high-res rows/cols to skip per low-poly vertex.
-# 8 means low-poly has 1/8 the linear resolution (1/64 the triangles).
-LOWPOLY_STEP = 8
+# 2 means low-poly has 1/2 the linear resolution (1/4 the triangles).
+LOWPOLY_STEP = 2
 
 # Normal map resolution in pixels. Must be power of 2.
 NORMAL_MAP_SIZE = 2048
