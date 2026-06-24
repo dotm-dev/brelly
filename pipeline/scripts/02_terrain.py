@@ -129,10 +129,11 @@ def _load_road_segments_for_conform(config_dict: dict, bbox: dict) -> list:
         }
 
         segments = []
-        obj_idx = -1
-        for j, feat in enumerate(lyr):
-            if j == 0:
-                obj_idx = feat.GetFieldIndex("OBJEKTART")
+        defn = lyr.GetLayerDefn()
+        obj_idx = defn.GetFieldIndex("OBJEKTART")  # -1 if field absent
+        lyr.SetSpatialFilterRect(bbox["min_e"], bbox["min_n"], bbox["max_e"], bbox["max_n"])
+
+        for feat in lyr:
             geom = feat.GetGeometryRef()
             if geom is None:
                 continue
