@@ -40,6 +40,10 @@ NORMAL_MAP_SIZE = 2048
 # high-res and low-poly at any point. 4m is conservative for Swiss terrain.
 BAKE_CAGE_EXTRUSION = 4.0
 
+# Cap the high-res mesh to at most this many rows/cols to keep bake times sane.
+# 4096×4096 = 16.7M vertices; 2048×2048 = 4.2M — still far more than the low-poly.
+HIRES_CAP = 2048
+
 
 with open(data_json_path) as f:
     data = json.load(f)
@@ -104,8 +108,11 @@ def _build_terrain_mesh(name, row_step, col_step):
 
 
 # Build high-res and low-poly meshes
-print(f"Building high-res mesh ({rows}x{cols})...", flush=True)
-hires_obj = _build_terrain_mesh("terrain_hires", row_step=1, col_step=1)
+hires_step = max(1, rows // HIRES_CAP, cols // HIRES_CAP)
+hr_rows = max(2, rows // hires_step)
+hr_cols = max(2, cols // hires_step)
+print(f"Building high-res mesh (~{hr_rows}x{hr_cols})...", flush=True)
+hires_obj = _build_terrain_mesh("terrain_hires", row_step=hires_step, col_step=hires_step)
 
 lp_rows = max(2, rows // LOWPOLY_STEP)
 lp_cols = max(2, cols // LOWPOLY_STEP)
