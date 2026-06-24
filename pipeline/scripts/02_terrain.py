@@ -73,7 +73,7 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
 
         bbox = bbox_from_center(config)
         diameter = config.radius_m * 2
-        n_cells = min(4096, max(64, int(diameter / cell_size)))
+        n_cells = max(64, int(diameter / cell_size))
         actual_cell = diameter / n_cells
 
         ds = gdal.Open(dem_path)

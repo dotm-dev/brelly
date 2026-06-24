@@ -1,0 +1,51 @@
+{
+  "name": "bre",
+  "displayName": "Bre",
+  "center_e": 2720000,
+  "center_n": 1096500,
+  "base_elevation": 916.1,
+  "terrain_cell_m": 0.5,
+  "skip_steps": ["vegetation"],
+  "start_line": {
+    "position": {
+      "x": 0,
+      "y": 0,
+      "z": -50
+    },
+    "normal": {
+      "x": 0,
+      "y": 0,
+      "z": 1
+    },
+    "widthMetres": 12
+  },
+  "finish_line": {
+    "position": {
+      "x": 0,
+      "y": 0,
+      "z": 200
+    },
+    "normal": {
+      "x": 0,
+      "y": 0,
+      "z": 1
+    },
+    "widthMetres": 12
+  },
+  "spawn_position": {
+    "x": 0,
+    "y": 1,
+    "z": -45
+  },
+  "spawn_rotation": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "w": 1
+  },
+  "checkpoints": [],
+  "source_data": {
+    "dem": "data/bre/alti3d.vrt",
+    "tlm": "data/bre/SWISSTLM3D_2026_LV95_LN02.gpkg"
+  }
+}
