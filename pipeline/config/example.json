@@ -1,0 +1,27 @@
+{
+  "name": "test_area",
+  "displayName": "Test Area",
+  "center_e": 2683000,
+  "center_n": 1247500,
+  "radius_m": 500,
+  "base_elevation": 450.0,
+  "terrain_cell_m": 1.0,
+  "_note_radius_m": "Optional — omit to auto-detect from DEM extent",
+  "start_line": {
+    "position": { "x": 0, "y": 0, "z": -50 },
+    "normal": { "x": 0, "y": 0, "z": 1 },
+    "widthMetres": 12
+  },
+  "finish_line": {
+    "position": { "x": 0, "y": 0, "z": 200 },
+    "normal": { "x": 0, "y": 0, "z": 1 },
+    "widthMetres": 12
+  },
+  "spawn_position": { "x": 0, "y": 1, "z": -45 },
+  "spawn_rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+  "checkpoints": [],
+  "source_data": {
+    "dem": "data/test_area/alti3d.vrt",
+    "tlm": "data/test_area/swissTLM3D.gpkg"
+  }
+}

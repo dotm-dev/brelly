@@ -59,7 +59,7 @@ def main(config_path: str) -> None:
 
 def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
     """Try to load DEM via GDAL; fall back to a flat synthetic heightmap."""
-    cell_size = 2.0
+    cell_size = float(config_dict.get("terrain_cell_m", 1.0))
     fallback_size = 64
     try:
         from osgeo import gdal
@@ -73,7 +73,7 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
 
         bbox = bbox_from_center(config)
         diameter = config.radius_m * 2
-        n_cells = min(1024, max(64, int(diameter / cell_size)))
+        n_cells = min(4096, max(64, int(diameter / cell_size)))
         actual_cell = diameter / n_cells
 
         ds = gdal.Open(dem_path)
