@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pipeline/run_pipeline.py
-"""Orchestrator: runs all 8 pipeline steps in sequence for a given config."""
+"""Orchestrator: runs all 10 pipeline steps in sequence for a given config."""
 import subprocess
 import sys
 import time
@@ -15,7 +15,8 @@ SCRIPTS = [
     ("vegetation",  "scripts/05_vegetation.py"),
     ("road graph",  "scripts/06_road_graph.py"),
     ("manifest",    "scripts/07_manifest.py"),
-    ("compress",    "scripts/08_compress.py"),
+    ("lod",         "scripts/08_lod.py"),
+    ("compress",    "scripts/09_compress.py"),
 ]
 
 WIDTH = 52
