@@ -275,6 +275,12 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
         bbox = bbox_from_center(config)
         diameter = config.radius_m * 2
         n_cells = max(64, int(diameter / cell_size))
+        # Cap to avoid exceeding GLB uint32 size limit (~4GB binary).
+        # With 1400 verts per side: ~2M verts × 56 bytes = ~112MB binary, safe for WebGL.
+        MAX_VERTS = 1400
+        if n_cells > MAX_VERTS:
+            print(f"  Capping terrain from {n_cells}×{n_cells} to {MAX_VERTS}×{MAX_VERTS} verts", flush=True)
+            n_cells = MAX_VERTS
         actual_cell = diameter / n_cells
 
         ds = gdal.Open(dem_path)

@@ -76,13 +76,16 @@ def write_buildings_glb(buildings: list[dict], out_path: Path) -> None:
         bottom = [(fp[i][0], by,     -fp[i][1]) for i in range(n)]
         top    = [(fp[i][0], by + h, -fp[i][1]) for i in range(n)]
 
-        # Bottom face (normal points down: 0, -1, 0)
-        _add_face(list(reversed(bottom)), (0.0, -1.0, 0.0))
+        # Z-negation flips polygon orientation from CCW (GIS standard) to CW in glTF
+        # XZ plane. All face windings must account for this flip.
+
+        # Bottom face: normal (0,-1,0). CW-from-above order gives correct -Y normal.
+        _add_face(bottom, (0.0, -1.0, 0.0))
 
         # Top / roof
         if roof == "pitched" and n >= 4:
             cx = sum(p[0] for p in fp) / n
-            cz = -sum(p[1] for p in fp) / n  # negated to match glTF Z=-north
+            cz = -sum(p[1] for p in fp) / n
             w  = max(max(p[0] for p in fp) - min(p[0] for p in fp),
                      max(p[1] for p in fp) - min(p[1] for p in fp))
             ridge_y = by + h + 0.3 * w
@@ -90,26 +93,27 @@ def write_buildings_glb(buildings: list[dict], out_path: Path) -> None:
             for i in range(n):
                 tv0 = top[i]
                 tv1 = top[(i + 1) % n]
-                # face normal: cross product of two edges
-                e1 = (tv1[0]-tv0[0], tv1[1]-tv0[1], tv1[2]-tv0[2])
-                e2 = (apex[0]-tv0[0], apex[1]-tv0[1], apex[2]-tv0[2])
+                # Reversed winding [apex, tv1, tv0] gives outward-facing normals
+                # after the Z-flip (verified via cross-product).
+                e1 = (tv1[0]-apex[0], tv1[1]-apex[1], tv1[2]-apex[2])
+                e2 = (tv0[0]-apex[0], tv0[1]-apex[1], tv0[2]-apex[2])
                 nx = e1[1]*e2[2] - e1[2]*e2[1]
                 ny_ = e1[2]*e2[0] - e1[0]*e2[2]
                 nz = e1[0]*e2[1] - e1[1]*e2[0]
                 ln = max((nx**2 + ny_**2 + nz**2) ** 0.5, 1e-9)
-                _add_face([tv0, tv1, apex], (nx/ln, ny_/ln, nz/ln))
+                _add_face([apex, tv1, tv0], (nx/ln, ny_/ln, nz/ln))
         else:
-            _add_face(top, (0.0, 1.0, 0.0))
+            # Top face: normal (0,1,0). Reversed CW = CCW from above gives +Y normal.
+            _add_face(list(reversed(top)), (0.0, 1.0, 0.0))
 
-        # Walls
+        # Walls: [b0, t0, t1, b1] is CCW when viewed from outside after the Z-flip.
         for i in range(n):
             b0, b1 = bottom[i], bottom[(i + 1) % n]
             t0, t1 = top[i],    top[(i + 1) % n]
-            # outward normal for this wall segment
             dx, dz = b1[0] - b0[0], b1[2] - b0[2]
             ln = max((dx**2 + dz**2) ** 0.5, 1e-9)
             wn = (dz / ln, 0.0, -dx / ln)
-            _add_face([b0, b1, t1, t0], wn)
+            _add_face([b0, t0, t1, b1], wn)
 
     if not indices:
         write_placeholder_glb(out_path)
