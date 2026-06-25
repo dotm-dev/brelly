@@ -13,7 +13,7 @@ from utils.io import read_json, ensure_dir, output_dir
 from utils.coords import config_from_dict
 from scripts._terrain_conform import conform_to_roads, RoadSegment
 
-TARGET_TILE_VERTS = 500   # max vertices per tile side; each tile ≤ 3M indices
+TARGET_TILE_VERTS = 2000  # max vertices per tile side — 1400 verts → 1×1 single tile
 
 
 # ── GLB writer ────────────────────────────────────────────────────────────────
@@ -176,6 +176,7 @@ def write_terrain_glb(heights, cell: float, texture_path: str | None, out_path: 
                 "metallicFactor": 0.0,
                 "roughnessFactor": 1.0,
             },
+            "doubleSided": True,
         })
 
     # Assemble binary buffer
@@ -234,7 +235,8 @@ def main(config_path: str) -> None:
     out_glb = out_dir / "terrain.glb"
 
     data = _load_or_synthesize_heightmap(config_dict)
-    texture_path = _fetch_swissimage(config_dict, out_dir, tex_size=data["width"])
+    tex_size = min(4096, max(data["width"], 2048))
+    texture_path = _fetch_swissimage(config_dict, out_dir, tex_size=tex_size)
     try:
         write_terrain_glb(data["heights"], data["cell_size"], texture_path, out_glb)
     except Exception as e:
@@ -437,7 +439,7 @@ def _fetch_swissimage(config_dict: dict, out_dir: Path, tex_size: int = 1024) ->
             mem_ds.GetRasterBand(2).WriteArray(arr_g)
             mem_ds.GetRasterBand(3).WriteArray(arr_b)
 
-        gdal.GetDriverByName("JPEG").CreateCopy(str(out_path), mem_ds, options=["QUALITY=90"])
+        gdal.GetDriverByName("JPEG").CreateCopy(str(out_path), mem_ds, options=["QUALITY=85"])
         mem_ds = None
         print(f"SWISSIMAGE texture → {out_path}")
         return str(out_path)
