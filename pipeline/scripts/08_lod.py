@@ -7,7 +7,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.io import read_json, output_dir
 
-TARGET_TILE_VERTS = 500
+# Load TARGET_TILE_VERTS from 02_terrain.py so tile counts stay in sync.
+_terrain_spec = importlib.util.spec_from_file_location(
+    "_terrain_const", Path(__file__).parent / "02_terrain.py"
+)
+_terrain_const_mod = importlib.util.module_from_spec(_terrain_spec)
+_terrain_spec.loader.exec_module(_terrain_const_mod)
+TARGET_TILE_VERTS = _terrain_const_mod.TARGET_TILE_VERTS
 
 
 def subsample(heights: list[list[float]], factor: int) -> list[list[float]]:
