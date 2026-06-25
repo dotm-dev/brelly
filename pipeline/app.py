@@ -64,10 +64,13 @@ def run_subprocess(
                 text=True,
                 cwd=str(PROJECT_ROOT),
             )
-            assert proc.stdout is not None
+            if proc.stdout is None:
+                raise RuntimeError("Popen stdout is None — unexpected")
             for line in proc.stdout:
                 out_queue.put(line.rstrip("\n"))
             proc.wait()
+            if proc.returncode != 0:
+                out_queue.put(f"✗ process exited with code {proc.returncode}")
             out_queue.put(None)  # sentinel: done
         except Exception as exc:
             out_queue.put(f"ERROR: {exc}")
