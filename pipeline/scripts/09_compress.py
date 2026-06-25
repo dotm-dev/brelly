@@ -17,7 +17,9 @@ def main(config_path: str) -> None:
         print("WARNING: gltfpack not found. Skipping compression.")
         return
 
-    glbs = sorted(out_dir.glob("*.glb"))
+    # terrain.glb is tiled (36 separate mesh nodes); gltfpack merges them into
+    # one mesh which defeats the tiling and breaks WebGL index limits.
+    glbs = sorted(p for p in out_dir.glob("*.glb") if p.name != "terrain.glb")
     total = len(glbs)
     for j, glb_path in enumerate(glbs, 1):
         label = f"[{j}/{total}] {glb_path.name}"
