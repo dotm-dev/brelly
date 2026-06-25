@@ -91,11 +91,11 @@ except ModuleNotFoundError:
     _TK_AVAILABLE = False
 
 
-class PipelineApp:
+class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
     def __init__(self) -> None:
         if not _TK_AVAILABLE:
             raise RuntimeError("tkinter is not available in this Python environment.")
-        tk.Tk.__init__(self)
+        super().__init__()
         self.title("Brelly Pipeline")
         self.geometry("720x520")
         self.resizable(True, True)
