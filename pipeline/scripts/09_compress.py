@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pipeline/scripts/08_compress.py
+# pipeline/scripts/09_compress.py
 """Run gltfpack on all GLB files in the output directory."""
 import sys, subprocess, shutil
 from pathlib import Path
