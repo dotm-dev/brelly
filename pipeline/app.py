@@ -48,3 +48,30 @@ def build_run_config(source: Path, skip: set[str], dest: Path) -> None:
     data = json.loads(source.read_text())
     data["skip_steps"] = sorted(skip)
     dest.write_text(json.dumps(data, indent=2))
+
+
+def run_subprocess(
+    cmd: list[str],
+    out_queue: "queue.Queue[str | None]",
+) -> None:
+    """Run cmd in a background thread, put each output line into out_queue. Puts None when done."""
+    def _target() -> None:
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                cwd=str(PROJECT_ROOT),
+            )
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                out_queue.put(line.rstrip("\n"))
+            proc.wait()
+            out_queue.put(None)  # sentinel: done
+        except Exception as exc:
+            out_queue.put(f"ERROR: {exc}")
+            out_queue.put(None)
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
