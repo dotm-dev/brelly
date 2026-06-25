@@ -48,10 +48,17 @@ def main(config_path: str) -> None:
     roads_json.write_text(json.dumps(roads_data))
     baker = Path(__file__).parent.parent / "blender" / "road_baker.py"
     print(f"Baking {len(roads_data)} road segments in Blender…", flush=True)
-    result = subprocess.run(
-        [blender, "--background", "--python", str(baker), "--", str(roads_json), str(out_glb)],
-        capture_output=True, text=True
-    )
+    try:
+        result = subprocess.run(
+            [blender, "--background", "--factory-startup", "--python", str(baker),
+             "--", str(roads_json), str(out_glb)],
+            capture_output=True, text=True, timeout=300,
+        )
+    except subprocess.TimeoutExpired:
+        print("WARNING: Blender timed out after 300s. Writing placeholder roads.glb.")
+        roads_json.unlink(missing_ok=True)
+        write_placeholder_glb(out_glb)
+        return
     roads_json.unlink(missing_ok=True)
     if result.returncode != 0:
         print(f"WARNING: Blender road bake failed.\n{result.stderr[-500:]}")

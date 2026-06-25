@@ -156,10 +156,15 @@ def main(config_path: str) -> None:
     out_glb = out_dir / "vegetation.glb"
     baker = Path(__file__).parent.parent / "blender" / "vegetation_baker.py"
     print(f"Baking {len(positions)} trees in Blender…", flush=True)
-    result = subprocess.run(
-        [blender, "--background", "--python", str(baker), "--", str(out_path), str(out_glb)],
-        capture_output=True, text=True
-    )
+    try:
+        result = subprocess.run(
+            [blender, "--background", "--factory-startup", "--python", str(baker),
+             "--", str(out_path), str(out_glb)],
+            capture_output=True, text=True, timeout=600,
+        )
+    except subprocess.TimeoutExpired:
+        print("WARNING: Blender timed out after 600s. Skipping vegetation.glb.")
+        return
     if result.returncode != 0:
         print(f"WARNING: Blender vegetation bake failed.\n{result.stderr[-500:]}")
     else:
