@@ -2,7 +2,7 @@
 import {
   Engine,
   Scene,
-  ArcRotateCamera,
+  UniversalCamera,
   FollowCamera,
   HemisphericLight,
   DirectionalLight,
@@ -15,7 +15,8 @@ import {
   AbstractMesh,
   TransformNode,
 } from '@babylonjs/core'
-import '@babylonjs/loaders/glTF'
+import { GLTFFileLoader } from '@babylonjs/loaders/glTF'
+SceneLoader.RegisterPlugin(new GLTFFileLoader())
 import type { IRenderer, MapPack, VehicleState, GhostFrame } from '@core/types'
 
 export class BabylonRenderer implements IRenderer {
@@ -32,7 +33,7 @@ export class BabylonRenderer implements IRenderer {
     window.addEventListener('resize', this.resizeHandler)
     this.setupLights()
     this.setupFallbackGround()
-    this.setupOrbitCamera()
+    this.setupPreviewCamera()
   }
 
   private setupLights(): void {
@@ -66,12 +67,62 @@ export class BabylonRenderer implements IRenderer {
     this.scene.activeCamera = cam
   }
 
-  // Available for use when no vehicle is spawned
-  private setupOrbitCamera(): void {
-    const cam = new ArcRotateCamera('orbit', -Math.PI / 2, Math.PI / 3, 20, Vector3.Zero(), this.scene)
-    cam.lowerRadiusLimit = 5
-    cam.upperRadiusLimit = 100
+  private setupPreviewCamera(): void {
+    const cam = new UniversalCamera('preview-cam', new Vector3(0, 600, -800), this.scene)
+    cam.setTarget(Vector3.Zero())
+    cam.speed = 20
+    cam.minZ = 1
+    // WASD + Q/E for vertical — keyboard input only, mouse handled manually below
+    cam.keysUp    = [87] // W
+    cam.keysDown  = [83] // S
+    cam.keysLeft  = [65] // A
+    cam.keysRight = [68] // D
+    cam.keysUpward   = [69] // E
+    cam.keysDownward = [81] // Q
     this.scene.activeCamera = cam
+  }
+
+  attachPreviewControls(canvas: HTMLCanvasElement): void {
+    const cam = this.scene.getCameraByName('preview-cam') as UniversalCamera
+    // attach keyboard only — remove built-in mouse input to avoid the accumulation bug
+    cam.inputs.removeByType('FreeCameraMouseInput')
+    cam.inputs.removeByType('FreeCameraMouseWheelInput')
+    cam.attachControl(canvas, true)
+
+    const ROTATE_SPEED = 0.0015
+
+    let dragging = false
+    let lastX = 0
+    let lastY = 0
+
+    const onDown = (e: PointerEvent) => {
+      if (e.button === 0 || e.button === 2) {
+        dragging = true
+        lastX = e.clientX
+        lastY = e.clientY
+        canvas.setPointerCapture(e.pointerId)
+      }
+    }
+
+    const onMove = (e: PointerEvent) => {
+      if (!dragging) return
+      const dx = e.clientX - lastX
+      const dy = e.clientY - lastY
+      lastX = e.clientX
+      lastY = e.clientY
+
+      // both buttons rotate — left look-around, right fixes facing direction (WoW flying)
+      cam.rotation.y += dx * ROTATE_SPEED
+      cam.rotation.x += dy * ROTATE_SPEED
+      cam.rotation.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, cam.rotation.x))
+    }
+
+    const onUp = () => { dragging = false }
+
+    canvas.addEventListener('pointerdown', onDown)
+    canvas.addEventListener('pointermove', onMove)
+    canvas.addEventListener('pointerup',   onUp)
+    canvas.addEventListener('contextmenu', e => e.preventDefault())
   }
 
   async loadMap(pack: MapPack): Promise<void> {
@@ -81,11 +132,57 @@ export class BabylonRenderer implements IRenderer {
     const load = (path: string) =>
       SceneLoader.ImportMeshAsync('', basePath + '/', path, this.scene)
 
-    await Promise.all([
-      load(pack.manifest.assets.terrain),
-      load(pack.manifest.assets.roads),
-      load(pack.manifest.assets.buildings),
-    ])
+    const assets = pack.manifest.assets
+
+    const [terrainResult, roadsResult, buildingsResult, vegResult, lod1Result, lod2Result] =
+      await Promise.all([
+        load(assets.terrain),
+        load(assets.roads),
+        load(assets.buildings),
+        assets.vegetation ? load(assets.vegetation) : Promise.resolve(null),
+        assets.terrainLod1 ? load(assets.terrainLod1) : Promise.resolve(null),
+        assets.terrainLod2 ? load(assets.terrainLod2) : Promise.resolve(null),
+      ])
+
+    // ── Terrain LOD ────────────────────────────────────────────────────────
+    const LOD1_DIST = 500    // metres from camera to tile centre
+    const LOD2_DIST = 2000
+
+    const lod1Tiles = lod1Result?.meshes ?? []
+    const lod2Tiles = lod2Result?.meshes ?? []
+    lod1Tiles.forEach(m => m.setEnabled(false))
+    lod2Tiles.forEach(m => m.setEnabled(false))
+
+    terrainResult.meshes.forEach((tile, i) => {
+      if (lod1Tiles[i]) (tile as any).addLODLevel(LOD1_DIST, lod1Tiles[i] as any)
+      if (lod2Tiles[i]) (tile as any).addLODLevel(LOD2_DIST, lod2Tiles[i] as any)
+    })
+
+    // ── Road colours ───────────────────────────────────────────────────────
+    const roadColors: Record<string, Color3> = {
+      road_major: new Color3(0.20, 0.20, 0.24),
+      road_main:  new Color3(0.25, 0.25, 0.28),
+      road_local: new Color3(0.30, 0.30, 0.33),
+      road_small: new Color3(0.35, 0.35, 0.37),
+      path:       new Color3(0.55, 0.48, 0.40),
+    }
+    const defaultRoadColor = new Color3(0.25, 0.25, 0.28)
+    roadsResult.meshes.forEach(m => {
+      const typeName = m.material?.name ?? m.name
+      const mat = new StandardMaterial(`road-mat-${typeName}`, this.scene)
+      mat.diffuseColor = roadColors[typeName] ?? defaultRoadColor
+      m.material = mat
+    })
+
+    const buildingMat = new StandardMaterial('building-mat', this.scene)
+    buildingMat.diffuseColor = new Color3(0.85, 0.78, 0.65)
+    buildingsResult.meshes.forEach(m => { m.material = buildingMat })
+
+    if (vegResult) {
+      const vegMat = new StandardMaterial('vegetation-mat', this.scene)
+      vegMat.diffuseColor = new Color3(0.15, 0.45, 0.12)
+      vegResult.meshes.forEach(m => { m.material = vegMat })
+    }
   }
 
   spawnVehicleMesh(): TransformNode {
