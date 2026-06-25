@@ -283,6 +283,7 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
             n_cells = MAX_VERTS
         actual_cell = diameter / n_cells
 
+        NODATA_SENTINEL = -9999.0
         ds = gdal.Open(dem_path)
         mem_ds = gdal.Warp(
             '', ds,
@@ -290,9 +291,18 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
             outputBounds=(bbox['min_e'], bbox['min_n'], bbox['max_e'], bbox['max_n']),
             width=n_cells, height=n_cells,
             resampleAlg='bilinear',
-            dstNodata=config.base_elevation,
+            dstNodata=NODATA_SENTINEL,
         )
-        arr = mem_ds.GetRasterBand(1).ReadAsArray().astype(float)
+        band = mem_ds.GetRasterBand(1)
+        band.SetNoDataValue(NODATA_SENTINEL)
+
+        # Fill cells outside the Swiss DEM coverage (nodata) by nearest-neighbor
+        # propagation so the terrain doesn't drop to y=0 at boundaries.
+        gdal.FillNodata(band, None, maxSearchDist=200, smoothingIterations=2)
+
+        arr = band.ReadAsArray().astype(float)
+        # Any remaining unfilled sentinel cells (very large gaps): clamp to base_elevation
+        arr[arr == NODATA_SENTINEL] = config.base_elevation
         arr -= config.base_elevation
         arr = np.flipud(arr)
 
@@ -411,6 +421,21 @@ def _fetch_swissimage(config_dict: dict, out_dir: Path, tex_size: int = 1024) ->
         )
         if mem_ds is None:
             raise RuntimeError("Warp returned empty dataset")
+
+        import numpy as np_tex
+        # Fill pixels where WMTS returned no data (black, outside Switzerland coverage)
+        # with a neutral mid-green so border areas don't appear as dark voids.
+        arr_r = mem_ds.GetRasterBand(1).ReadAsArray()
+        arr_g = mem_ds.GetRasterBand(2).ReadAsArray()
+        arr_b = mem_ds.GetRasterBand(3).ReadAsArray()
+        mask_empty = (arr_r.astype(np_tex.int16) + arr_g + arr_b) < 15   # near-black = nodata
+        if mask_empty.any():
+            arr_r[mask_empty] = 110
+            arr_g[mask_empty] = 130
+            arr_b[mask_empty] = 85
+            mem_ds.GetRasterBand(1).WriteArray(arr_r)
+            mem_ds.GetRasterBand(2).WriteArray(arr_g)
+            mem_ds.GetRasterBand(3).WriteArray(arr_b)
 
         gdal.GetDriverByName("JPEG").CreateCopy(str(out_path), mem_ds, options=["QUALITY=90"])
         mem_ds = None
