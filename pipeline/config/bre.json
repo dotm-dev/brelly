@@ -4,7 +4,7 @@
   "center_e": 2720000,
   "center_n": 1096500,
   "base_elevation": 916.1,
-  "terrain_cell_m": 1.5,
+  "terrain_cell_m": 1.0,
   "skip_steps": [],
   "start_line": {
     "position": {

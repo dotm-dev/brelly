@@ -12,7 +12,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@babylonjs/havok'],
+    exclude: ['@babylonjs/havok', '@babylonjs/loaders'],
   },
   test: {
     environment: 'node',

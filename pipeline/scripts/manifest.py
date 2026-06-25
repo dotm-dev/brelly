@@ -7,6 +7,7 @@ def build_manifest(config: dict, lod_available: bool = True) -> dict:
     r = float(config.get("radius_m", 500.0))
     assets: dict = {
         "terrain": "terrain.glb",
+        "terrainTexture": "terrain_texture.jpg",
         "roads": "roads.glb",
         "buildings": "buildings.glb",
         "vegetation": "vegetation.glb",

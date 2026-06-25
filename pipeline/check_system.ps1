@@ -5,6 +5,6 @@
 "DEPS=$(.venv\Scripts\python.exe -c 'from osgeo import gdal; import pyproj, shapely, numpy' 2>&1 | Out-Null; if ($LASTEXITCODE -eq 0) { 'ok' } else { 'missing' })"
 "BLENDER=$(if (Get-Command blender -EA 0) { 'ok' } else { 'missing' })"
 "GLTFPACK=$(if (Get-Command gltfpack -EA 0) { 'ok' } else { 'missing' })"
-"DATA_DEM=$(if (Test-Path data\alti3d.tif) { 'ok' } else { 'missing' })"
-"DATA_TLM=$(if (Test-Path data\swissTLM3D.gpkg) { 'ok' } else { 'missing' })"
+"DATA_DEM=$(if (Get-ChildItem data\*\alti3d.vrt -EA 0) { 'ok' } else { 'missing' })"
+"DATA_TLM=$(if (Get-ChildItem data\*\swissTLM3D.gpkg -EA 0) { 'ok' } else { 'missing' })"
 "CONFIG=$(if (Get-ChildItem pipeline\config\*.json -Exclude example.json -EA 0) { 'ok' } else { 'missing' })"

@@ -235,10 +235,19 @@ def main(config_path: str) -> None:
     out_glb = out_dir / "terrain.glb"
 
     data = _load_or_synthesize_heightmap(config_dict)
-    tex_size = min(4096, max(data["width"], 2048))
+    # Base texture size on physical extent, not heightmap vert count (which may be capped).
+    # Texture is saved as a separate file — not embedded in the GLB — so the GLB stays lean
+    # and there's no 4096 WebGL embed limit to worry about.
+    from utils.coords import config_from_dict as _cfg
+    import shutil
+    _c = _cfg(config_dict)
+    tex_size = min(8192, max(int(_c.radius_m * 2 / 1.75), 2048))
     texture_path = _fetch_swissimage(config_dict, out_dir, tex_size=tex_size)
+    terrain_texture_out = out_dir / "terrain_texture.jpg"
+    if texture_path and Path(texture_path).exists():
+        shutil.copy2(texture_path, terrain_texture_out)
     try:
-        write_terrain_glb(data["heights"], data["cell_size"], texture_path, out_glb)
+        write_terrain_glb(data["heights"], data["cell_size"], None, out_glb)
     except Exception as e:
         import traceback
         print(f"ERROR: write_terrain_glb failed: {e}")
@@ -394,7 +403,7 @@ def _fetch_swissimage(config_dict: dict, out_dir: Path, tex_size: int = 1024) ->
             "<DataWindow>"
             "<UpperLeftX>-20037508.34</UpperLeftX><UpperLeftY>20037508.34</UpperLeftY>"
             "<LowerRightX>20037508.34</LowerRightX><LowerRightY>-20037508.34</LowerRightY>"
-            "<TileLevel>17</TileLevel>"
+            "<TileLevel>18</TileLevel>"
             "<TileCountX>1</TileCountX><TileCountY>1</TileCountY>"
             "<YOrigin>top</YOrigin>"
             "</DataWindow>"

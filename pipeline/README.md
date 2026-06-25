@@ -46,8 +46,8 @@ Create a JSON file based on [`pipeline/config/example.json`](config/example.json
   "spawn_rotation": { "x": 0, "y": 0,  "z": 0,   "w": 1 },
   "checkpoints": [],
   "source_data": {
-    "dem": "data/alti3d.tif",
-    "tlm": "data/swissTLM3D.gpkg"
+    "dem": "data/my_area/alti3d.vrt",
+    "tlm": "data/my_area/swissTLM3D.gpkg"
   }
 }
 ```
@@ -67,7 +67,7 @@ Create a JSON file based on [`pipeline/config/example.json`](config/example.json
 | `spawn_position` | object | Player vehicle spawn point in ENU space |
 | `spawn_rotation` | object | Spawn orientation as a quaternion (x, y, z, w) |
 | `checkpoints` | array | Optional ordered list of checkpoint objects |
-| `source_data.dem` | string | Path to the alti3D GeoTIFF |
+| `source_data.dem` | string | Path to the alti3D VRT mosaic (e.g. `data/my_area/alti3d.vrt`) |
 | `source_data.tlm` | string | Path to the swissTLM3D GeoPackage |
 
 ### Coordinate system

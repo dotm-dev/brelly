@@ -390,6 +390,53 @@ body {
 .precheck-body .code-block  { margin-bottom: 12px; }
 .precheck-body .verify-block { margin-bottom: 0; }
 
+/* ── Config form ── */
+.config-form { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+.config-row { display: grid; grid-template-columns: 150px 1fr; gap: 0 16px; align-items: start; }
+.config-label {
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Code", monospace;
+  color: var(--code-fg);
+  font-weight: 600;
+  padding-top: 9px;
+  text-align: right;
+}
+.config-input {
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.config-input[type="number"] { font-family: "SF Mono", "Fira Code", monospace; }
+.config-input:focus { border-color: var(--amber); }
+.config-input::placeholder { color: var(--text-5); }
+.config-hint { font-size: 11px; color: var(--text-5); margin-top: 4px; line-height: 1.5; }
+.config-hint a { color: var(--amber); }
+
+/* ── Area name input ── */
+.area-name-input {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.area-name-input:focus { border-color: var(--amber); }
+.area-name-input::placeholder { color: var(--text-5); font-style: italic; }
+
 /* ── System checker ── */
 .checker-input { margin-bottom: 20px; }
 .checker-textarea {

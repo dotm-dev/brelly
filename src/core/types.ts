@@ -82,6 +82,7 @@ export interface MapManifest {
   checkpoints: CheckpointDefinition[]
   assets: {
     terrain: string        // relative path to terrain.glb
+    terrainTexture?: string // relative path to satellite texture (separate from GLB)
     terrainLod1?: string   // relative path to terrain_lod1.glb (optional, for LOD)
     terrainLod2?: string   // relative path to terrain_lod2.glb (optional, for LOD)
     roads: string          // relative path to roads.glb

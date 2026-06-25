@@ -150,29 +150,46 @@ export class BabylonRenderer implements IRenderer {
     const LOD1_DIST = 500    // metres from camera to tile centre
     const LOD2_DIST = 2000
 
-    const lod1Tiles = lod1Result?.meshes ?? []
-    const lod2Tiles = lod2Result?.meshes ?? []
-    lod1Tiles.forEach(m => m.setEnabled(false))
-    lod2Tiles.forEach(m => m.setEnabled(false))
-
-    // Extract the satellite texture embedded in the glTF PBR material (if present),
-    // then apply a StandardMaterial — PBR is sometimes not rendered on all tile meshes
-    // by BabylonJS's glTF loader, and StandardMaterial is more reliable.
-    const pbrMat = terrainResult.materials?.[0] as any
-    const albedoTex: Texture | null = pbrMat?.albedoTexture ?? null
+    const terrainTiles = terrainResult.meshes.filter(
+      m => (m as Mesh).getTotalVertices?.() > 0
+    ) as Mesh[]
 
     const terrainMat = new StandardMaterial('terrain-mat', this.scene)
     terrainMat.backFaceCulling = false
-    if (albedoTex) {
-      terrainMat.diffuseTexture = albedoTex
+    terrainMat.disableLighting = true
+    if (assets.terrainTexture) {
+      const tex = new Texture(`${basePath}/${assets.terrainTexture}`, this.scene,
+        false, false)  // noMipmap=false, invertY=false — UVs are already in glTF convention
+      tex.wrapU = Texture.CLAMP_ADDRESSMODE
+      tex.wrapV = Texture.CLAMP_ADDRESSMODE
+      terrainMat.emissiveTexture = tex
     } else {
-      terrainMat.diffuseColor = new Color3(0.35, 0.45, 0.25)
+      terrainMat.emissiveColor = new Color3(0.35, 0.45, 0.25)
     }
 
-    terrainResult.meshes.forEach((tile, i) => {
-      tile.material = terrainMat
-      if (lod1Tiles[i]) (tile as Mesh).addLODLevel(LOD1_DIST, lod1Tiles[i] as Mesh)
-      if (lod2Tiles[i]) (tile as Mesh).addLODLevel(LOD2_DIST, lod2Tiles[i] as Mesh)
+    terrainTiles.forEach(tile => { tile.material = terrainMat })
+
+    // Apply terrainMat to LOD meshes too, matched by name so order doesn't matter.
+    const lodAllMeshes = [...(lod1Result?.meshes ?? []), ...(lod2Result?.meshes ?? [])]
+    lodAllMeshes.forEach(m => {
+      if ((m as Mesh).getTotalVertices?.() > 0) m.material = terrainMat
+    })
+
+    // Wire up LOD levels by matching tile names across GLBs.
+    const lod1ByName = new Map(
+      (lod1Result?.meshes ?? []).map(m => [m.name, m as Mesh])
+    )
+    const lod2ByName = new Map(
+      (lod2Result?.meshes ?? []).map(m => [m.name, m as Mesh])
+    )
+    lod1Result?.meshes.forEach(m => m.setEnabled(false))
+    lod2Result?.meshes.forEach(m => m.setEnabled(false))
+
+    terrainTiles.forEach(tile => {
+      const l1 = lod1ByName.get(tile.name)
+      const l2 = lod2ByName.get(tile.name)
+      if (l1) tile.addLODLevel(LOD1_DIST, l1)
+      if (l2) tile.addLODLevel(LOD2_DIST, l2)
     })
 
     // ── Road colours ───────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 // src/adapters/babylon/GameApp.ts
 import HavokPhysics from '@babylonjs/havok'
-import { HavokPlugin, Vector3 } from '@babylonjs/core'
+import { HavokPlugin, Vector3, MeshBuilder, PhysicsAggregate, PhysicsShapeType } from '@babylonjs/core'
 import { BabylonRenderer } from './BabylonRenderer'
 import { HavokPhysicsProvider } from './HavokPhysicsProvider'
 import { InputHandler } from './InputHandler'
@@ -42,15 +42,30 @@ export class GameApp {
     this.renderer = new BabylonRenderer(canvas)
   }
 
+  async startPreview(mapPack: MapPack): Promise<void> {
+    await this.renderer.loadMap(mapPack)
+    this.renderer.attachPreviewControls(this.canvas)
+    this.renderer.startRenderLoop(() => {})
+  }
+
   async start(mapPack?: MapPack): Promise<void> {
     // Initialize Havok physics
     const havokInstance = await HavokPhysics()
     const havokPlugin = new HavokPlugin(true, havokInstance)
     this.renderer.scene.enablePhysics(new Vector3(0, -9.81, 0), havokPlugin)
 
-    // Load map if provided, otherwise use flat plane
+    // Load map if provided, otherwise add physics collider to fallback ground
     if (mapPack) {
       await this.renderer.loadMap(mapPack)
+    } else {
+      const ground = MeshBuilder.CreateBox(
+        'ground-collider',
+        { width: 500, height: 0.2, depth: 500 },
+        this.renderer.scene
+      )
+      ground.position.y = -0.1
+      ground.isVisible = false
+      new PhysicsAggregate(ground, PhysicsShapeType.BOX, { mass: 0 }, this.renderer.scene)
     }
 
     const spawnPos = mapPack?.manifest.spawnPosition ?? { x: 0, y: 1, z: 0 }

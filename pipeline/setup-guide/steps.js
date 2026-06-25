@@ -179,14 +179,14 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
   {
     title: 'Install gltfpack (optional)',
     desc:  'gltfpack compresses the .glb mesh files produced by the pipeline. Skip this step if you don\'t need smaller output files — the pipeline will warn but still run.',
-    precheck: { lang: 'bash', code: `gltfpack --version`, verify: `meshoptimizer ...` },
+    precheck: { lang: 'bash', code: `command -v gltfpack`, verify: `/usr/local/bin/gltfpack` },
     macos: [
       { type: 'instruction', label: 'Download the binary', html: `<ol>
 <li>Go to <a href="https://github.com/zeux/meshoptimizer/releases" target="_blank" style="color:var(--amber)">github.com/zeux/meshoptimizer/releases</a></li>
 <li>Download <code>gltfpack-macos</code> from the latest release</li>
 <li>Rename it and move it onto your PATH:</li>
 </ol>` },
-      { type: 'instruction', label: 'Install', lang: 'bash', code: `sudo mv ~/Downloads/gltfpack /usr/local/bin/gltfpack\nsudo chmod +x /usr/local/bin/gltfpack` },
+      { type: 'instruction', label: 'Install', lang: 'bash', code: `sudo mv ~/Downloads/gltfpack /usr/local/bin/gltfpack\nsudo chmod +x /usr/local/bin/gltfpack\nsudo xattr -d com.apple.quarantine /usr/local/bin/gltfpack` },
       { type: 'instruction', label: 'Verify', lang: 'bash', code: `gltfpack --version` },
     ],
     windows: [
@@ -205,75 +205,71 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
     title: 'Download source data',
     desc:  'The pipeline needs two datasets from swisstopo — Switzerland\'s federal geospatial authority. Both are free to download.',
     precheck: {
-      macos:   { lang: 'bash',       code: `ls data/alti3d.tif data/swissTLM3D.gpkg`,                            verify: `data/alti3d.tif\ndata/swissTLM3D.gpkg` },
-      windows: { lang: 'powershell', code: `Test-Path data\\alti3d.tif; Test-Path data\\swissTLM3D.gpkg`, verify: `True\nTrue` },
+      macos:   { lang: 'bash',       code: `ls data/{AREA}/alti3d.vrt data/{AREA}/swissTLM3D.gpkg`,         verify: `data/{AREA}/alti3d.vrt\ndata/{AREA}/swissTLM3D.gpkg` },
+      windows: { lang: 'powershell', code: `Test-Path data\\{AREA}\\alti3d.vrt; Test-Path data\\{AREA}\\swissTLM3D.gpkg`, verify: `True\nTrue` },
     },
-    macos: [],
-    windows: [],
+    macos: [
+      { type: 'area-input' },
+      { type: 'instruction', label: 'Create the area folder', lang: 'bash',
+        code: `mkdir -p data/{AREA}` },
+      { type: 'instruction', label: 'Build the VRT mosaic (run after placing all .tif tiles)', lang: 'bash',
+        code: `gdalbuildvrt data/{AREA}/alti3d.vrt data/{AREA}/*.tif` },
+    ],
+    windows: [
+      { type: 'area-input' },
+      { type: 'instruction', label: 'Create the area folder', lang: 'powershell',
+        code: `mkdir data\\{AREA}` },
+      { type: 'instruction', label: 'Build the VRT mosaic (run after placing all .tif tiles)', lang: 'powershell',
+        code: `$tiles = (Get-ChildItem data\\{AREA}\\*.tif).FullName\ngdalbuildvrt data\\{AREA}\\alti3d.vrt $tiles` },
+    ],
     shared: [
       { type: 'instruction', label: 'alti3D — digital elevation model', html: `<ol>
 <li>Go to <a href="https://www.swisstopo.admin.ch/en/height-model-swissalti3d" target="_blank" style="color:var(--amber)">swisstopo.admin.ch — alti3D</a></li>
-<li>Download the GeoTIFF for your area (0.5 m resolution, LV95)</li>
-<li>Save as <code>data/alti3d.tif</code> inside the Brelly project folder</li>
+<li>Download all GeoTIFF tiles covering your area (0.5 m resolution, LV95)</li>
+<li>Place all <code>.tif</code> files into <code>data/{AREA}/</code> — names don't matter, any <code>*.tif</code> in that folder is included</li>
 </ol>` },
+      { type: 'callout', html: `swisstopo tile filenames look like <code>swissalti3d_0.5_2056_2680_1248.tif</code> — the numbers are the LV95 km-grid position. Tiles are georeferenced so GDAL aligns them automatically; you don't need to rename or reorder them.` },
       { type: 'instruction', label: 'swissTLM3D — topographic landscape model', html: `<ol>
 <li>Go to <a href="https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d" target="_blank" style="color:var(--amber)">swisstopo.admin.ch — swissTLM3D</a></li>
-<li>Download the GeoPackage (<code>.gpkg</code>) — full dataset or regional extract</li>
-<li>Save as <code>data/swissTLM3D.gpkg</code> inside the Brelly project folder</li>
+<li>Click <strong>Download swissTLM3D</strong>, then choose format <strong>GeoPackage (.gpkg)</strong></li>
+<li>There is only one file covering all of Switzerland — download it and save as <code>data/{AREA}/swissTLM3D.gpkg</code></li>
 </ol>` },
-      { type: 'verify', code: `Brelly/\n└── data/\n    ├── alti3d.tif\n    └── swissTLM3D.gpkg` },
+      { type: 'verify', code: `Brelly/\n└── data/\n    └── {AREA}/\n        ├── swissalti3d_0.5_2056_2680_1248.tif  ← one or more tiles\n        ├── swissalti3d_0.5_2056_2681_1248.tif\n        ├── alti3d.vrt                          ← generated by gdalbuildvrt\n        └── swissTLM3D.gpkg` },
     ],
   },
 
   // ── Step 9 ──────────────────────────────────────────────────────────────
   {
     title: 'Create a map config',
-    desc:  'Each map area needs a JSON config file that defines its location, size, and race layout. Copy the example and fill in your values.',
+    desc:  'Fill in your area details — the config file is generated and downloaded ready to use.',
     precheck: {
-      macos:   { lang: 'bash',       code: `ls pipeline/config/*.json | grep -v example`,                                    verify: `pipeline/config/my_area.json` },
-      windows: { lang: 'powershell', code: `Get-ChildItem pipeline\\config\\*.json | Where-Object Name -ne example.json`, verify: `my_area.json` },
+      macos:   { lang: 'bash',       code: `ls pipeline/config/*.json | grep -v example`,                                 verify: `# any non-example .json means this step is done` },
+      windows: { lang: 'powershell', code: `Get-ChildItem pipeline\\config\\*.json | Where-Object Name -ne example.json`, verify: `# any file listed means this step is done` },
     },
-    macos: [
-      { type: 'instruction', label: 'Copy the example config', lang: 'bash',
-        code: `cp pipeline/config/example.json pipeline/config/my_area.json` },
-    ],
-    windows: [
-      { type: 'instruction', label: 'Copy the example config', lang: 'powershell',
-        code: `copy pipeline\\config\\example.json pipeline\\config\\my_area.json` },
-    ],
+    macos: [],
+    windows: [],
     shared: [
-      { type: 'instruction', label: 'Open the file and edit these fields', html: `<table style="width:100%;border-collapse:collapse;font-size:13px">
-<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px 8px;color:var(--text-3);font-weight:600">Field</th><th style="text-align:left;padding:6px 8px;color:var(--text-3);font-weight:600">What to set</th></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">name</td><td style="padding:6px 8px;color:var(--text-3)">Short ID, no spaces — becomes the output folder name</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">displayName</td><td style="padding:6px 8px;color:var(--text-3)">Human-readable name shown in the UI</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">center_e</td><td style="padding:6px 8px;color:var(--text-3)">LV95 easting of your map centre</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">center_n</td><td style="padding:6px 8px;color:var(--text-3)">LV95 northing of your map centre</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">radius_m</td><td style="padding:6px 8px;color:var(--text-3)">Half-width in metres (500 = 1 km × 1 km)</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">base_elevation</td><td style="padding:6px 8px;color:var(--text-3)">Approximate ground elevation at centre (metres)</td></tr>
-<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">source_data.dem</td><td style="padding:6px 8px;color:var(--text-3)">Path to your alti3D GeoTIFF</td></tr>
-<tr><td style="padding:6px 8px;font-family:monospace;color:var(--code-fg)">source_data.tlm</td><td style="padding:6px 8px;color:var(--text-3)">Path to your swissTLM3D GeoPackage</td></tr>
-</table>` },
-      { type: 'callout', html: `To find LV95 coordinates for a location: go to <a href="https://map.geo.admin.ch" target="_blank" style="color:var(--amber)">map.geo.admin.ch</a> and right-click any point to copy coordinates.` },
+      { type: 'config-builder' },
     ],
   },
 
   // ── Step 10 ──────────────────────────────────────────────────────────────
   {
     title: 'Run the pipeline',
-    desc:  'Run all 8 processing steps in sequence. The pipeline clips geodata, bakes 3-D meshes, builds the road graph, and assembles the manifest.',
+    desc:  'Download the run script below — it activates the virtual environment and runs the pipeline in one step, with your area name already filled in.',
     macos: [
-      { type: 'callout', html: `Make sure the virtual environment is active: <code>source .venv/bin/activate</code>` },
-      { type: 'instruction', label: 'Run in terminal', lang: 'bash',
-        code: `python pipeline/run_pipeline.py pipeline/config/my_area.json` },
+      { type: 'run-script' },
+      { type: 'instruction', label: 'Run from the Brelly project folder', lang: 'bash',
+        code: `bash run_{AREA}.sh` },
     ],
     windows: [
-      { type: 'callout', html: `Make sure the virtual environment is active: <code>.venv\\Scripts\\Activate.ps1</code>` },
-      { type: 'instruction', label: 'Run in PowerShell', lang: 'powershell',
-        code: `python pipeline\\run_pipeline.py pipeline\\config\\my_area.json` },
+      { type: 'run-script' },
+      { type: 'instruction', label: 'Run from the Brelly project folder', lang: 'powershell',
+        code: `.\\run_{AREA}.ps1` },
     ],
     shared: [
-      { type: 'verify', code: `============================================================\nRunning: scripts/01_reproject.py\n============================================================\nReprojected data clipped to bbox → maps/my_area/reprojected.gpkg\n...\nPipeline complete.` },
-      { type: 'instruction', label: 'Output files', html: `<p>Results land in <code>maps/my_area/</code>:</p>
+      { type: 'verify', code: `============================================================\nRunning: scripts/01_reproject.py\n============================================================\nReprojected data clipped to bbox → maps/{AREA}/reprojected.gpkg\n...\nPipeline complete.` },
+      { type: 'instruction', label: 'Output files', html: `<p>Results land in <code>maps/{AREA}/</code>:</p>
 <ul style="margin-top:8px">
 <li><code>terrain.glb</code> — heightmap mesh</li>
 <li><code>roads.glb</code> — road surfaces</li>
