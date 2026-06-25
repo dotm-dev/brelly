@@ -69,10 +69,12 @@ def write_buildings_glb(buildings: list[dict], out_path: Path) -> None:
         if n < 3:
             continue
 
-        # Build bottom and top vertex rings
-        # fp is [x, z] in ENU — glTF uses Y-up so vert = (x, y, z)
-        bottom = [(fp[i][0], by,     fp[i][1]) for i in range(n)]
-        top    = [(fp[i][0], by + h, fp[i][1]) for i in range(n)]
+        # Build bottom and top vertex rings.
+        # fp is [east_offset, north_offset] from lv95_to_enu.
+        # glTF convention for this project: X=east, Y=elevation, Z=-north.
+        # Blender's Y-up export applied this negation implicitly; we do it explicitly.
+        bottom = [(fp[i][0], by,     -fp[i][1]) for i in range(n)]
+        top    = [(fp[i][0], by + h, -fp[i][1]) for i in range(n)]
 
         # Bottom face (normal points down: 0, -1, 0)
         _add_face(list(reversed(bottom)), (0.0, -1.0, 0.0))
@@ -80,7 +82,7 @@ def write_buildings_glb(buildings: list[dict], out_path: Path) -> None:
         # Top / roof
         if roof == "pitched" and n >= 4:
             cx = sum(p[0] for p in fp) / n
-            cz = sum(p[1] for p in fp) / n
+            cz = -sum(p[1] for p in fp) / n  # negated to match glTF Z=-north
             w  = max(max(p[0] for p in fp) - min(p[0] for p in fp),
                      max(p[1] for p in fp) - min(p[1] for p in fp))
             ridge_y = by + h + 0.3 * w

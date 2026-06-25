@@ -7,21 +7,38 @@ MAX_MITER = 3.0
 
 
 def load_terrain(out_glb_path: str):
-    """Import terrain.glb from the same directory as out_glb_path. Returns mesh obj or None."""
+    """Import terrain.glb from the same directory, join all tile meshes, return combined obj."""
     import bpy
     terrain_path = str(Path(out_glb_path).parent / "terrain.glb")
     if not Path(terrain_path).exists():
         print(f"WARNING: terrain.glb not found at {terrain_path} — skipping terrain snap")
         return None
     try:
+        before = set(bpy.data.objects.keys())
         bpy.ops.import_scene.gltf(filepath=terrain_path)
-        # prefer an object whose name contains "terrain"
-        for obj in bpy.context.scene.objects:
-            if obj.type == "MESH" and "terrain" in obj.name.lower():
-                return obj
-        for obj in bpy.context.scene.objects:
-            if obj.type == "MESH":
-                return obj
+        new_objs = [o for o in bpy.context.scene.objects
+                    if o.name not in before and o.type == "MESH"]
+        if not new_objs:
+            return None
+        # Apply each object's transform (glTF Y-up → Blender Z-up rotation) so that
+        # vertex data is in Blender world space before raycasting. Must be done even
+        # for single-tile terrain — skipping this causes snap_z to raycast in glTF
+        # local space (Y=elevation, Z=-north) and return wrong results.
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in new_objs:
+            bpy.context.view_layer.objects.active = o
+            o.select_set(True)
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            o.select_set(False)
+
+        if len(new_objs) == 1:
+            return new_objs[0]
+
+        for o in new_objs:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = new_objs[0]
+        bpy.ops.object.join()
+        return bpy.context.view_layer.objects.active
     except Exception as e:
         print(f"WARNING: Could not load terrain.glb: {e}")
     return None

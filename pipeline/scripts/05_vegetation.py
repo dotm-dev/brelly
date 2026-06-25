@@ -158,7 +158,7 @@ def main(config_path: str) -> None:
     print(f"Baking {len(positions)} trees in Blender…", flush=True)
     try:
         result = subprocess.run(
-            [blender, "--background", "--factory-startup", "--python", str(baker),
+            [blender, "--background", "--python", str(baker),
              "--", str(out_path), str(out_glb)],
             capture_output=True, text=True, timeout=600,
         )
