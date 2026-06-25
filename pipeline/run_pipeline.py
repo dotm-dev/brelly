@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 SCRIPTS = [
+    ("download",    "scripts/00_download.py"),
     ("reproject",   "scripts/01_reproject.py"),
     ("terrain",     "scripts/02_terrain.py"),
     ("roads",       "scripts/03_roads.py"),
@@ -31,10 +32,12 @@ def run(config_path: str) -> None:
     timings: list[tuple[str, float]] = []
     overall_start = time.monotonic()
 
-    print(f"\n  Map pipeline  ·  {Path(config_path).stem}")
+    cfg = __import__("json").load(open(config_path))
+    map_name = cfg.get("displayName") or cfg.get("name") or Path(config_path).stem
+    print(f"\n  Map pipeline  ·  {map_name}")
     print("  " + "─" * WIDTH)
 
-    skip = set(__import__("json").load(open(config_path)).get("skip_steps", []))
+    skip = set(cfg.get("skip_steps", []))
 
     for idx, (label, script) in enumerate(SCRIPTS, 1):
         pct = int((idx - 1) / total * 100)
