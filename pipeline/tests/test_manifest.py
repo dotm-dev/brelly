@@ -72,6 +72,12 @@ def test_manifest_spawn_position_passes_through():
 
 
 def test_manifest_includes_terrain_lod_assets():
-    m = build_manifest(BASE_CONFIG)
+    m = build_manifest(BASE_CONFIG, lod_available=True)
     assert m["assets"]["terrainLod1"] == "terrain_lod1.glb"
     assert m["assets"]["terrainLod2"] == "terrain_lod2.glb"
+
+
+def test_manifest_excludes_terrain_lod_when_not_available():
+    m = build_manifest(BASE_CONFIG, lod_available=False)
+    assert "terrainLod1" not in m["assets"]
+    assert "terrainLod2" not in m["assets"]
