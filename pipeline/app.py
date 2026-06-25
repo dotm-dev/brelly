@@ -32,7 +32,7 @@ def scan_configs(config_dir: Path) -> list[tuple[str, Path]]:
     """Return [(display_name, path), ...] sorted by display name, excluding example.json."""
     results = []
     for p in sorted(config_dir.glob("*.json")):
-        if p.stem == "example":
+        if p.stem == "example" or p.name.startswith("."):
             continue
         try:
             data = json.loads(p.read_text())
