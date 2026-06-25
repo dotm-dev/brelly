@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import queue
+import re
 import subprocess
 import sys
 import tempfile
@@ -246,6 +247,9 @@ class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
                         self._tmp_config.unlink(missing_ok=True)
                         self._tmp_config = None
                     return
+                line = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", line)
+                if not line:
+                    continue
                 tag = None
                 low = line.lower()
                 if "✗" in line or "failed" in low or "error" in low:
