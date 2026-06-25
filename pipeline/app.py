@@ -98,6 +98,7 @@ class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
         super().__init__()
         self.title("Brelly Pipeline")
         self.geometry("720x520")
+        self.minsize(480, 360)
         self.resizable(True, True)
 
         self._configs: list[tuple[str, Path]] = scan_configs(CONFIG_DIR)
@@ -202,19 +203,28 @@ class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
     # ── Button handlers ──────────────────────────────────────────────────────
 
     def _on_check_system(self) -> None:
+        if self._running:
+            return
         self._append("\n── Check System ──────────────────────────────", tag="ok")
         self._set_running(True)
         run_subprocess(["bash", str(PIPELINE_DIR / "check_system.sh")], self._log_queue)
         self._poll_queue()
 
     def _on_run_pipeline(self) -> None:
+        if self._running:
+            return
         cfg_path = self._selected_config_path()
         if cfg_path is None:
             self._append("No config selected.", tag="error")
             return
 
         self._tmp_config = CONFIG_DIR / ".tmp_run.json"
-        build_run_config(cfg_path, self._skipped_steps(), self._tmp_config)
+        try:
+            build_run_config(cfg_path, self._skipped_steps(), self._tmp_config)
+        except Exception as exc:
+            self._append(f"Failed to write run config: {exc}", tag="error")
+            self._tmp_config = None
+            return
 
         self._append(f"\n── Run Pipeline · {self._map_var.get()} ──────────────────", tag="ok")
         self._set_running(True)
@@ -232,8 +242,8 @@ class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
                 if line is None:
                     # subprocess done
                     self._set_running(False)
-                    if self._tmp_config and self._tmp_config.exists():
-                        self._tmp_config.unlink()
+                    if self._tmp_config:
+                        self._tmp_config.unlink(missing_ok=True)
                         self._tmp_config = None
                     return
                 tag = None
