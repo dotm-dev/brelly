@@ -13,6 +13,7 @@ import {
   Color3,
   SceneLoader,
   AbstractMesh,
+  Mesh,
   TransformNode,
 } from '@babylonjs/core'
 import { GLTFFileLoader } from '@babylonjs/loaders/glTF'
@@ -154,8 +155,8 @@ export class BabylonRenderer implements IRenderer {
     lod2Tiles.forEach(m => m.setEnabled(false))
 
     terrainResult.meshes.forEach((tile, i) => {
-      if (lod1Tiles[i]) (tile as any).addLODLevel(LOD1_DIST, lod1Tiles[i] as any)
-      if (lod2Tiles[i]) (tile as any).addLODLevel(LOD2_DIST, lod2Tiles[i] as any)
+      if (lod1Tiles[i]) (tile as Mesh).addLODLevel(LOD1_DIST, lod1Tiles[i] as Mesh)
+      if (lod2Tiles[i]) (tile as Mesh).addLODLevel(LOD2_DIST, lod2Tiles[i] as Mesh)
     })
 
     // ── Road colours ───────────────────────────────────────────────────────
