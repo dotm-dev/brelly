@@ -23,15 +23,19 @@ def _pad4(data: bytes) -> bytes:
     return data + b'\x00' * ((4 - r) % 4)
 
 
-def write_terrain_glb(heights, cell: float, texture_path: str | None, out_path: Path) -> None:
+def write_terrain_glb(heights, cell: float, texture_path: str | None, out_path: Path,
+                      force_tiles: tuple[int, int] | None = None) -> None:
     """Write a tiled terrain GLB directly without Blender."""
     import numpy as np
 
     heights_np = np.array(heights, dtype=np.float32)
     rows, cols = heights_np.shape
 
-    n_tiles_x = max(1, math.ceil(cols / TARGET_TILE_VERTS))
-    n_tiles_y = max(1, math.ceil(rows / TARGET_TILE_VERTS))
+    if force_tiles is not None:
+        n_tiles_x, n_tiles_y = force_tiles
+    else:
+        n_tiles_x = max(1, math.ceil(cols / TARGET_TILE_VERTS))
+        n_tiles_y = max(1, math.ceil(rows / TARGET_TILE_VERTS))
     tw = math.ceil(cols / n_tiles_x)   # tile width  in vertices
     th = math.ceil(rows / n_tiles_y)   # tile height in vertices
     print(f"Terrain {rows}×{cols} → {n_tiles_y}×{n_tiles_x} tiles", flush=True)
