@@ -15,6 +15,7 @@ def test_scan_configs_finds_json(tmp_path):
     names = [r[0] for r in results]
     assert "bre" in names
     assert "alps" in names
+    assert names == sorted(names)
 
 
 def test_scan_configs_excludes_example(tmp_path):

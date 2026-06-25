@@ -36,7 +36,7 @@ def scan_configs(config_dir: Path) -> list[tuple[str, Path]]:
             continue
         try:
             data = json.loads(p.read_text())
-        except Exception:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             data = {}
         name = data.get("name") or p.stem
         results.append((name, p))
