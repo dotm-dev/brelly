@@ -81,10 +81,13 @@ export interface MapManifest {
   finishLine: { position: Vec3; normal: Vec3; widthMetres: number }
   checkpoints: CheckpointDefinition[]
   assets: {
-    terrain: string     // relative path to terrain.glb
-    roads: string       // relative path to roads.glb
-    buildings: string   // relative path to buildings.glb
-    vegetationData: string  // relative path to vegetation.json
+    terrain: string        // relative path to terrain.glb
+    terrainLod1?: string   // relative path to terrain_lod1.glb (optional, for LOD)
+    terrainLod2?: string   // relative path to terrain_lod2.glb (optional, for LOD)
+    roads: string          // relative path to roads.glb
+    buildings: string      // relative path to buildings.glb
+    vegetation?: string    // relative path to vegetation.glb
+    vegetationData: string // relative path to vegetation.json
   }
   roadGraph: string     // relative path to road-graph.json
   bounds: { min: Vec3; max: Vec3 }
