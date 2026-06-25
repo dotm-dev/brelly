@@ -13,7 +13,7 @@ from utils.io import read_json, ensure_dir, output_dir
 from utils.coords import config_from_dict
 from scripts._terrain_conform import conform_to_roads, RoadSegment
 
-TARGET_TILE_VERTS = 2000  # max vertices per tile side — 1400 verts → 1×1 single tile
+TARGET_TILE_VERTS = 500   # max vertices per tile side; each tile ≤ 3M indices
 
 
 # ── GLB writer ────────────────────────────────────────────────────────────────

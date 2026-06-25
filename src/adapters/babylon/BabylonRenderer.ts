@@ -11,6 +11,7 @@ import {
   MeshBuilder,
   StandardMaterial,
   Color3,
+  Texture,
   SceneLoader,
   AbstractMesh,
   Mesh,
@@ -154,7 +155,22 @@ export class BabylonRenderer implements IRenderer {
     lod1Tiles.forEach(m => m.setEnabled(false))
     lod2Tiles.forEach(m => m.setEnabled(false))
 
+    // Extract the satellite texture embedded in the glTF PBR material (if present),
+    // then apply a StandardMaterial — PBR is sometimes not rendered on all tile meshes
+    // by BabylonJS's glTF loader, and StandardMaterial is more reliable.
+    const pbrMat = terrainResult.materials?.[0] as any
+    const albedoTex: Texture | null = pbrMat?.albedoTexture ?? null
+
+    const terrainMat = new StandardMaterial('terrain-mat', this.scene)
+    terrainMat.backFaceCulling = false
+    if (albedoTex) {
+      terrainMat.diffuseTexture = albedoTex
+    } else {
+      terrainMat.diffuseColor = new Color3(0.35, 0.45, 0.25)
+    }
+
     terrainResult.meshes.forEach((tile, i) => {
+      tile.material = terrainMat
       if (lod1Tiles[i]) (tile as Mesh).addLODLevel(LOD1_DIST, lod1Tiles[i] as Mesh)
       if (lod2Tiles[i]) (tile as Mesh).addLODLevel(LOD2_DIST, lod2Tiles[i] as Mesh)
     })
