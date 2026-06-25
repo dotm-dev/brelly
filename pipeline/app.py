@@ -136,7 +136,7 @@ class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
 
         self._btn_run = tk.Button(
             top, text="Run Pipeline", command=self._on_run_pipeline,
-            width=14, bg="#2d6a2d", fg="white",
+            width=14, bg="#2d6a2d", activebackground="#3a8a3a",
         )
         self._btn_run.pack(side="left", padx=4)
 
@@ -218,7 +218,7 @@ class PipelineApp(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
             self._append("No config selected.", tag="error")
             return
 
-        self._tmp_config = CONFIG_DIR / ".tmp_run.json"
+        self._tmp_config = CONFIG_DIR / f".tmp_{cfg_path.stem}.json"
         try:
             build_run_config(cfg_path, self._skipped_steps(), self._tmp_config)
         except Exception as exc:
