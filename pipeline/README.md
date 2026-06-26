@@ -275,7 +275,7 @@ Assembles the engine-facing descriptor:
 **Input:** `maps/<name>/terrain.glb` heights (derived from the same DEM data as step 02)
 **Output:** `maps/<name>/terrain_lod1.glb` (4× sub-sampled), `maps/<name>/terrain_lod2.glb` (16× sub-sampled)
 
-Generates two lower-resolution terrain meshes for distance rendering. Sub-samples the height grid by factors of 4 and 16, then bakes each into a GLB via the same Blender terrain baker used in step 02.
+Generates two lower-resolution terrain meshes for distance rendering. Sub-samples the height grid by factors of 4 and 16, then writes each as a GLB using the same pure-Python writer as step 02.
 
 ---
 
@@ -315,13 +315,13 @@ Test modules:
 
 ## Troubleshooting
 
-For installation issues (GDAL, Blender, pip errors) see [SETUP_MACOS.md](SETUP_MACOS.md) or [SETUP_WINDOWS.md](SETUP_WINDOWS.md).
+For installation issues (GDAL, pip errors) see [SETUP_MACOS.md](SETUP_MACOS.md) or [SETUP_WINDOWS.md](SETUP_WINDOWS.md).
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `WARNING: GDAL not available` | `gdal` Python bindings missing | macOS: SETUP_MACOS.md §3–4 · Windows: SETUP_WINDOWS.md §2–3 |
 | `WARNING: TLM source not found` | `source_data.tlm` path wrong | Check path in config JSON |
-| `WARNING: gltfpack not found` | gltfpack not installed | Non-fatal — macOS: SETUP_MACOS.md §7 · Windows: SETUP_WINDOWS.md §6 |
+| `WARNING: gltfpack not found` | gltfpack not installed | Non-fatal — macOS: SETUP_MACOS.md §6 · Windows: SETUP_WINDOWS.md §5 |
 | `FAILED: scripts/XX_*.py exited with code N` | Unhandled error in that step | Check stdout lines above for the specific error |
 | `Road graph: 0 nodes, 0 edges` | Road layer missing from GeoPackage | Verify layer name is `tlm_strassen_strasse` |
 
