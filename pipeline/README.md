@@ -145,19 +145,14 @@ If GDAL is unavailable or the TLM file is missing, an empty GeoPackage placehold
 
 ### Step 02 — Terrain (`02_terrain.py`)
 
-**Input:** `source_data.dem` (alti3D GeoTIFF), config  
-**Output:** `maps/<name>/terrain.glb`
+**Input:** `source_data.dem` (alti3D VRT mosaic), config  
+**Output:** `maps/<name>/terrain.glb`, `maps/<name>/terrain_texture.jpg`
 
-Loads elevation samples from the DEM and passes a heightmap JSON to Blender for mesh generation.
+Samples elevation from the DEM via GDAL, clips to the map bounding box, and writes a tiled GLB directly (no Blender). Tiles are sized so each stays under `TARGET_TILE_VERTS × TARGET_TILE_VERTS` vertices (500 × 500) to stay within WebGL index limits. A companion JPEG texture is derived from a colour-ramp of the elevation data.
 
-> **Note:** DEM sampling is not yet implemented; the step currently falls back to a flat 64×64 synthetic heightmap with `cell_size = 2.0 m` (128 m × 128 m flat plane).
+Also runs `conform_to_roads`: carves road corridors into the heightmap so terrain and road meshes align at the surface.
 
-**Blender baker (`blender/terrain_baker.py`):**
-
-1. Reads `{"width": N, "height": M, "heights": [[...], ...], "cell_size": float}`.
-2. Builds a grid mesh in bmesh — one quad per cell, vertices displaced by height value.
-3. Centred at origin: `x = col * cell_size - (cols * cell_size / 2)`.
-4. Exports with `bpy.ops.export_scene.gltf` in GLB format.
+Falls back to a flat 64×64 synthetic heightmap when GDAL is unavailable.
 
 ---
 
@@ -166,37 +161,27 @@ Loads elevation samples from the DEM and passes a heightmap JSON to Blender for 
 **Input:** `maps/<name>/reprojected.gpkg` (layer `tlm_strassen_strasse`)  
 **Output:** `maps/<name>/roads.glb`
 
-Reads road centrelines from the clipped GeoPackage, converts each polyline vertex from LV95 to ENU, then passes a JSON array of `{"coords": [[x,y,z], ...], "width": float}` objects to Blender.
+Reads road centrelines, converts each vertex from LV95 to ENU, resamples to ≤ 2 m node spacing (via `_road_resampler.py`), smooths intersections with constrained Laplacian smoothing (via `_road_smoother.py`), then builds a miter-joint ribbon mesh and writes a GLB directly (no Blender).
 
-Default road width: **6.0 m** (used when the TLM feature has no width attribute).
-
-**Blender baker (`blender/road_baker.py`):** receives the road array and produces a mesh. See [`blender/road_baker.py`](blender/road_baker.py) for mesh construction details.
+Default road width: **6.0 m** (used when the TLM feature has no width attribute). Roads are lifted `ROAD_LIFT` metres above the terrain surface to prevent z-fighting.
 
 ---
 
 ### Step 04 — Buildings (`04_buildings.py`)
 
-**Input:** `maps/<name>/reprojected.gpkg` (layer `tlm_bb_gebaeude` or `gebaeude`)  
+**Input:** `maps/<name>/reprojected.gpkg` (layer `tlm_bauten_gebaeude_footprint`)  
 **Output:** `maps/<name>/buildings.glb`
 
-Reads polygon footprints, converts ring vertices to ENU (X, Z only — Y handled by extrusion), and passes a JSON array of:
-
-```json
-{"footprint": [[x, z], ...], "height": 8.0, "base_y": 0.0}
-```
+Reads polygon footprints, converts ring vertices to ENU, extrudes each polygon by the building height, and writes a GLB directly (no Blender). Only `Polygon` geometry types are processed (OGR type codes 3 and −2147483645).
 
 Default building height: **8.0 m**.
-
-Only `Polygon` geometry types are processed (OGR type codes 3 and −2147483645).
-
-**Blender baker (`blender/building_baker.py`):** extrudes each footprint polygon to the specified height. See [`blender/building_baker.py`](blender/building_baker.py) for details.
 
 ---
 
 ### Step 05 — Vegetation (`05_vegetation.py`)
 
 **Input:** `maps/<name>/reprojected.gpkg` (layer `tlm_bb_einzelbaum_gebuesch` or `tlm_einzelbaum_gebuesch`)  
-**Output:** `maps/<name>/vegetation.json`
+**Output:** `maps/<name>/vegetation.glb`, `maps/<name>/vegetation.json`
 
 Extracts point geometries (individual trees / shrubs). Each point is converted to ENU:
 
@@ -264,10 +249,14 @@ Assembles the engine-facing descriptor:
   "finishLine": { ... },
   "checkpoints": [],
   "assets": {
-    "terrain":       "terrain.glb",
-    "roads":         "roads.glb",
-    "buildings":     "buildings.glb",
-    "vegetationData":"vegetation.json"
+    "terrain":        "terrain.glb",
+    "terrainTexture": "terrain_texture.jpg",
+    "roads":          "roads.glb",
+    "buildings":      "buildings.glb",
+    "vegetation":     "vegetation.glb",
+    "vegetationData": "vegetation.json",
+    "terrainLod1":    "terrain_lod1.glb",
+    "terrainLod2":    "terrain_lod2.glb"
   },
   "roadGraph": "road-graph.json",
   "bounds": {
@@ -331,7 +320,6 @@ For installation issues (GDAL, Blender, pip errors) see [SETUP_MACOS.md](SETUP_M
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `WARNING: GDAL not available` | `gdal` Python bindings missing | macOS: SETUP_MACOS.md §3–4 · Windows: SETUP_WINDOWS.md §2–3 |
-| `WARNING: Blender not found` | `blender` not on `PATH` | macOS: SETUP_MACOS.md §6 · Windows: SETUP_WINDOWS.md §5 |
 | `WARNING: TLM source not found` | `source_data.tlm` path wrong | Check path in config JSON |
 | `WARNING: gltfpack not found` | gltfpack not installed | Non-fatal — macOS: SETUP_MACOS.md §7 · Windows: SETUP_WINDOWS.md §6 |
 | `FAILED: scripts/XX_*.py exited with code N` | Unhandled error in that step | Check stdout lines above for the specific error |
