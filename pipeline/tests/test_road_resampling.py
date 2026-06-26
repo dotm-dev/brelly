@@ -10,6 +10,13 @@ def _dist(a, b):
     return math.sqrt((b["x"]-a["x"])**2 + (b["y"]-a["y"])**2 + (b["z"]-a["z"])**2)
 
 
+def test_single_node_returns_unchanged():
+    nodes = [{"x": 1.0, "y": 2.0, "z": 3.0, "isLocked": True}]
+    new_nodes, new_segs = _resample_nodes(nodes, [], max_spacing=2.0)
+    assert new_nodes == nodes
+    assert new_segs == []
+
+
 def test_short_segment_unchanged():
     nodes = [
         {"x": 0.0, "y": 0.0, "z": 0.0, "isLocked": True},
@@ -19,6 +26,8 @@ def test_short_segment_unchanged():
     new_nodes, new_segs = _resample_nodes(nodes, segments, max_spacing=2.0)
     assert len(new_nodes) == 2
     assert len(new_segs) == 1
+    assert new_nodes[0] == nodes[0]
+    assert new_nodes[1] == nodes[1]
 
 
 def test_long_segment_is_split():
@@ -65,6 +74,10 @@ def test_original_endpoint_coordinates_preserved():
     segments = [{"startIdx": 0, "endIdx": 1, "kind": "ground"}]
     new_nodes, _ = _resample_nodes(nodes, segments, max_spacing=1.0)
     assert new_nodes[0]["x"] == 1.1
+    assert new_nodes[0]["y"] == 2.2
+    assert new_nodes[0]["z"] == 3.3
+    assert new_nodes[-1]["x"] == 4.4
+    assert new_nodes[-1]["y"] == 5.5
     assert new_nodes[-1]["z"] == 6.6
 
 

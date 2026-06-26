@@ -16,15 +16,12 @@ def _resample_nodes(
     Nodes are interpolated linearly in 3-D glTF space (X=East, Y=elev, Z=-North).
     isLocked is False for every interpolated node.
     Each sub-segment inherits the kind of its parent segment.
+
+    Assumption: segments must be ordered and contiguous — consecutive segments
+    share an endpoint index (seg[i]["endIdx"] == seg[i+1]["startIdx"]).
     """
     if len(nodes) < 2:
         return list(nodes), list(segments)
-
-    # Build a per-node -> kind lookup from the segment list.
-    node_kind: list[str] = ["ground"] * len(nodes)
-    for seg in segments:
-        for idx in range(seg["startIdx"], seg["endIdx"]):
-            node_kind[idx] = seg["kind"]
 
     new_nodes: list[dict] = []
     new_segs:  list[dict] = []
