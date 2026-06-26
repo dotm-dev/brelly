@@ -182,6 +182,9 @@ def _build_road_meshes_from_splines(spline_dicts: list[dict]) -> dict[str, tuple
         nodes     = spline["nodes"]       # [{"x", "y", "z", "isLocked"}, ...]
         segments  = spline["segments"]    # [{"startIdx", "endIdx", "kind"}, ...]
 
+        from scripts._road_resampler import _resample_nodes
+        nodes, segments = _resample_nodes(nodes, segments)
+
         n_pts = len(nodes)
         if n_pts < 2:
             continue
