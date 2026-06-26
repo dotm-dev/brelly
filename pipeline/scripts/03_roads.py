@@ -10,6 +10,7 @@ from utils.io import read_json, ensure_dir, output_dir, progress
 from utils.coords import config_from_dict, lv95_to_enu, bbox_from_center
 from utils.constants import ROAD_LIFT, MAX_ROAD_MITER
 from scripts.road_graph import RoadLine
+from scripts._road_resampler import _resample_nodes
 
 
 def write_placeholder_glb(path: Path) -> None:
@@ -182,7 +183,6 @@ def _build_road_meshes_from_splines(spline_dicts: list[dict]) -> dict[str, tuple
         nodes     = spline["nodes"]       # [{"x", "y", "z", "isLocked"}, ...]
         segments  = spline["segments"]    # [{"startIdx", "endIdx", "kind"}, ...]
 
-        from scripts._road_resampler import _resample_nodes
         nodes, segments = _resample_nodes(nodes, segments)
 
         n_pts = len(nodes)
