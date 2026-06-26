@@ -145,38 +145,6 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
 
   // ── Step 6 ──────────────────────────────────────────────────────────────
   {
-    title: 'Install Blender',
-    desc:  'Blender bakes 3-D meshes for terrain, roads, and buildings. Without it the pipeline still runs but produces empty placeholder geometry.',
-    precheck: { lang: 'bash', code: `blender --version`, verify: `Blender 4.x.x` },
-    macos: [
-      { type: 'instruction', label: 'Download and install', html: `<ol>
-<li>Go to <a href="https://www.blender.org/download/" target="_blank" style="color:var(--amber)">blender.org/download</a></li>
-<li>Download the macOS <strong>.dmg</strong> and install as usual</li>
-</ol>` },
-      { type: 'instruction', label: 'Add Blender to PATH', lang: 'bash',
-        code: `echo 'export PATH="/Applications/Blender.app/Contents/MacOS:$PATH"' >> ~/.zprofile\nsource ~/.zprofile` },
-      { type: 'instruction', label: 'Verify', lang: 'bash', code: `blender --version` },
-      { type: 'verify', code: `Blender 4.x.x` },
-    ],
-    windows: [
-      { type: 'instruction', label: 'Download and install', html: `<ol>
-<li>Go to <a href="https://www.blender.org/download/" target="_blank" style="color:var(--amber)">blender.org/download</a></li>
-<li>Download the Windows <strong>.msi</strong> and run it</li>
-</ol>` },
-      { type: 'instruction', label: 'Add Blender to PATH', html: `<ol>
-<li>Press <strong>Win + R</strong>, type <code>sysdm.cpl</code>, press Enter</li>
-<li>Go to <strong>Advanced → Environment Variables</strong></li>
-<li>Under <em>User variables</em>, select <strong>Path → Edit → New</strong></li>
-<li>Add: <code>C:\\Program Files\\Blender Foundation\\Blender 4.x</code> (match your version)</li>
-<li>Click OK on all dialogs, then open a <strong>new</strong> PowerShell window</li>
-</ol>` },
-      { type: 'instruction', label: 'Verify (new PowerShell window)', lang: 'powershell', code: `blender --version` },
-      { type: 'verify', code: `Blender 4.x.x` },
-    ],
-  },
-
-  // ── Step 7 ──────────────────────────────────────────────────────────────
-  {
     title: 'Install gltfpack (optional)',
     desc:  'gltfpack compresses the .glb mesh files produced by the pipeline. Skip this step if you don\'t need smaller output files — the pipeline will warn but still run.',
     precheck: { lang: 'bash', code: `command -v gltfpack`, verify: `/usr/local/bin/gltfpack` },
@@ -194,13 +162,13 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
 <li>Go to <a href="https://github.com/zeux/meshoptimizer/releases" target="_blank" style="color:var(--amber)">github.com/zeux/meshoptimizer/releases</a></li>
 <li>Download <code>gltfpack-win64.exe</code> from the latest release</li>
 <li>Rename to <code>gltfpack.exe</code> and place it in a folder on your PATH (e.g. <code>C:\\tools\\</code>)</li>
-<li>Add that folder to PATH using the same steps as for Blender in Step 6</li>
+<li>Add that folder to PATH using the same steps as in Step 5</li>
 </ol>` },
       { type: 'instruction', label: 'Verify (new PowerShell window)', lang: 'powershell', code: `gltfpack --version` },
     ],
   },
 
-  // ── Step 8 ──────────────────────────────────────────────────────────────
+  // ── Step 7 ──────────────────────────────────────────────────────────────
   {
     title: 'Download source data',
     desc:  'The pipeline needs two datasets from swisstopo — Switzerland\'s federal geospatial authority. Both are free to download.',
@@ -238,7 +206,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
     ],
   },
 
-  // ── Step 9 ──────────────────────────────────────────────────────────────
+  // ── Step 8 ──────────────────────────────────────────────────────────────
   {
     title: 'Create a map config',
     desc:  'Fill in your area details — the config file is generated and downloaded ready to use.',
@@ -253,7 +221,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
     ],
   },
 
-  // ── Step 10 ──────────────────────────────────────────────────────────────
+  // ── Step 9 ──────────────────────────────────────────────────────────────
   {
     title: 'Run the pipeline',
     desc:  'Download the run script below — it activates the virtual environment and runs the pipeline in one step, with your area name already filled in.',
@@ -272,20 +240,24 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
       { type: 'instruction', label: 'Output files', html: `<p>Results land in <code>maps/{AREA}/</code>:</p>
 <ul style="margin-top:8px">
 <li><code>terrain.glb</code> — heightmap mesh</li>
+<li><code>terrain_texture.jpg</code> — elevation colour ramp texture</li>
+<li><code>terrain_lod1.glb</code> — 4× sub-sampled LOD mesh</li>
+<li><code>terrain_lod2.glb</code> — 16× sub-sampled LOD mesh</li>
 <li><code>roads.glb</code> — road surfaces</li>
 <li><code>buildings.glb</code> — building footprints</li>
-<li><code>vegetation.json</code> — tree positions</li>
+<li><code>vegetation.glb</code> — instanced tree mesh data</li>
+<li><code>vegetation.json</code> — tree positions (ENU)</li>
 <li><code>road-graph.json</code> — navigation graph</li>
 <li><code>manifest.json</code> — map descriptor</li>
 </ul>` },
     ],
   },
 
-  // ── Step 11 ──────────────────────────────────────────────────────────────
+  // ── Step 10 ──────────────────────────────────────────────────────────────
   {
     title: 'Run the tests',
-    desc:  'Verify the pipeline code is working correctly. All tests should pass with or without GDAL and Blender installed.',
-    precheck: { lang: 'bash', code: `pytest pipeline/tests/ --tb=no -q`, verify: `25 passed` },
+    desc:  'Verify the pipeline code is working correctly. All tests should pass with or without GDAL installed.',
+    precheck: { lang: 'bash', code: `pytest pipeline/tests/ --tb=no -q`, verify: `52 passed` },
     macos: [
       { type: 'instruction', label: 'Run in terminal (venv must be active)', lang: 'bash',
         code: `pytest pipeline/tests/` },
@@ -295,7 +267,7 @@ To reactivate: <code>.venv\\Scripts\\Activate.ps1</code>` },
         code: `pytest pipeline\\tests\\` },
     ],
     shared: [
-      { type: 'verify', code: `collected 4 items\n\npipeline/tests/test_coords.py    PASSED\npipeline/tests/test_manifest.py  PASSED\npipeline/tests/test_road_graph.py PASSED\npipeline/tests/test_e2e.py       PASSED\n\n4 passed in 0.xx s` },
+      { type: 'verify', code: `collected 52 items\n\npipeline/tests/test_app.py              PASSED\npipeline/tests/test_coords.py           PASSED\npipeline/tests/test_e2e.py              PASSED\npipeline/tests/test_lod.py              PASSED\npipeline/tests/test_manifest.py         PASSED\npipeline/tests/test_road_graph.py       PASSED\npipeline/tests/test_road_resampling.py  PASSED\npipeline/tests/test_terrain_conform.py  PASSED\npipeline/tests/test_terrain_force_tiles.py PASSED\n\n52 passed in x.xx s` },
     ],
   },
 ];
