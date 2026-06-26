@@ -68,7 +68,7 @@ Reactivate in a new terminal: `.venv\Scripts\Activate.ps1`
 
 ## 4. Install Python dependencies
 
-GDAL is already installed (step 2), so skip it here:
+GDAL is already installed (step 2). Do **not** run `pip install -r pipeline/requirements.txt` — it includes `gdal` which cannot be installed via pip on Windows. Install the remaining packages manually:
 
 ```powershell
 pip install pyproj shapely numpy pytest
@@ -80,31 +80,18 @@ Verify:
 python -c "import pyproj, shapely, numpy; print('OK')"
 ```
 
-## 5. Install Blender
-
-1. Download from https://www.blender.org/download/ (`.msi`) and install
-2. Add to PATH: `Win + R` → `sysdm.cpl` → Advanced → Environment Variables → User `Path` → Edit → New → add `C:\Program Files\Blender Foundation\Blender 4.x`
-
-Open a new PowerShell window:
-
-```powershell
-blender --version   # Blender 4.x.x
-```
-
-> Without Blender, steps 02–04 produce empty placeholder GLBs.
-
-## 6. Install gltfpack (optional)
+## 5. Install gltfpack (optional)
 
 Compresses `.glb` output. Skip if you don't need it.
 
 1. Download `gltfpack-win64.exe` from https://github.com/zeux/meshoptimizer/releases
-2. Rename to `gltfpack.exe`, place in e.g. `C:\tools\`, add that folder to PATH (same steps as Blender above)
+2. Rename to `gltfpack.exe`, place in e.g. `C:\tools\`, add that folder to PATH (`Win + R` → `sysdm.cpl` → Advanced → Environment Variables → User `Path` → Edit → New)
 
 ```powershell
 gltfpack --version
 ```
 
-## 7. Download source data
+## 6. Download source data
 
 Both datasets are free from swisstopo. Create a folder per map area inside `data\` (replace `my_area` with your chosen name):
 
@@ -132,7 +119,7 @@ Brelly\
         └── swissTLM3D.gpkg
 ```
 
-## 8. Create a map config
+## 7. Create a map config
 
 ```powershell
 copy pipeline\config\example.json pipeline\config\my_area.json
@@ -148,12 +135,13 @@ Edit at minimum:
 | `center_n` | LV95 northing |
 | `radius_m` | Half-width in metres (500 = 1 km × 1 km) |
 | `base_elevation` | Approximate ground elevation in metres |
+| `terrain_cell_m` | DEM sampling resolution in metres (default 1.0) |
 | `source_data.dem` | e.g. `data/my_area/alti3d.vrt` |
 | `source_data.tlm` | e.g. `data/my_area/swissTLM3D.gpkg` |
 
 Use forward slashes or escaped backslashes in JSON paths. Find LV95 coordinates: https://map.geo.admin.ch — right-click any point.
 
-## 9. Run the pipeline
+## 8. Run the pipeline
 
 ```powershell
 python pipeline\run_pipeline.py pipeline\config\my_area.json
@@ -161,7 +149,7 @@ python pipeline\run_pipeline.py pipeline\config\my_area.json
 
 Output lands in `maps\my_area\`.
 
-## 10. Run the tests
+## 9. Run the tests
 
 ```powershell
 pytest pipeline\tests\
@@ -177,7 +165,6 @@ pytest pipeline\tests\
 | `pip install gdal` fails | Use Gohlke wheels (step 2) |
 | `from osgeo import gdal` fails after wheel install | Ensure you installed `win_amd64` and Python is 64-bit |
 | Scripts disabled in PowerShell | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
-| `WARNING: Blender not found` | Add Blender to PATH (step 5), open a new terminal |
 | `WARNING: TLM source not found` | Check `source_data.tlm` path in config — relative to project root, forward slashes |
-| `WARNING: gltfpack not found` | Optional — install via step 6 or ignore |
+| `WARNING: gltfpack not found` | Optional — install via step 5 or ignore |
 | `FAILED: scripts/XX_*.py exited with code N` | Read the lines above the error |
