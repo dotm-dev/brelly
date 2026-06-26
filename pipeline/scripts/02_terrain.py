@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.io import read_json, ensure_dir, output_dir
 from utils.coords import config_from_dict
-from scripts._terrain_conform import conform_to_roads, RoadSegment
+from scripts._terrain_conform import conform_to_roads
 
 TARGET_TILE_VERTS = 500   # max vertices per tile side; each tile ≤ 3M indices
 
@@ -317,14 +317,15 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
         arr -= config.base_elevation
         arr = np.flipud(arr)
 
-        road_segments = _load_road_segments_for_conform(config_dict, bbox)
+        road_segments, n_splines = _smooth_and_save_splines(config_dict, bbox, config, ds)
         if road_segments:
             conform_to_roads(
                 arr, road_segments,
                 min_e=bbox["min_e"], min_n=bbox["min_n"],
                 cell_size=actual_cell, blend_cells=2,
             )
-            print(f"  Road conforming: {len(road_segments)} segments applied", flush=True)
+            print(f"  Road cut/fill: {len(road_segments)} ground segments "
+                  f"from {n_splines} splines", flush=True)
 
         return {"width": n_cells, "height": n_cells, "heights": arr.tolist(), "cell_size": actual_cell}
     except Exception as e:
@@ -333,47 +334,84 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
         return {"width": fallback_size, "height": fallback_size, "heights": heights, "cell_size": cell_size}
 
 
-def _load_road_segments_for_conform(config_dict: dict, bbox: dict) -> list:
+def _smooth_and_save_splines(config_dict: dict, bbox: dict, config, dem_ds) -> tuple[list, int]:
+    """Run intersection locking + Laplacian smoothing on TLM roads.
+
+    Saves road_splines.json to the output directory for consumption by 03_roads.py
+    and Babylon.js.  Returns (road_segments, n_splines) where road_segments are
+    the ground-only RoadSegment objects ready for cut/fill terrain deformation.
+    """
     try:
+        import json as _json
         from osgeo import ogr
         from utils.io import output_dir
+        from scripts.road_graph import RoadLine
+        from scripts._road_smoother import smooth_roads
+
         gpkg = output_dir(config_dict) / "reprojected.gpkg"
         if not gpkg.exists():
-            return []
-        ds = ogr.Open(str(gpkg))
-        if ds is None:
-            return []
-        lyr = ds.GetLayerByName("tlm_strassen_strasse") or ds.GetLayer(0)
+            return [], 0
+
+        ogr_ds = ogr.Open(str(gpkg))
+        if ogr_ds is None:
+            return [], 0
+        lyr = ogr_ds.GetLayerByName("tlm_strassen_strasse") or ogr_ds.GetLayer(0)
         if lyr is None:
-            return []
+            return [], 0
 
-        _WIDTHS = {
-            "8m Strasse": 8.0, "6m Strasse": 6.0, "4m Strasse": 4.0,
-            "3m Strasse": 3.0, "2m Weg": 2.0, "1m Weg": 1.5, "1m Wegfragment": 1.5,
+        _OBJEKTART_MAP = {
+            "Autobahn":    ("road_major", 14.0), "Autostrasse":  ("road_major", 12.0),
+            "10m Strasse": ("road_major", 10.0), "8m Strasse":   ("road_major",  8.0),
+            "6m Strasse":  ("road_main",   6.0), "4m Strasse":   ("road_local",  4.0),
+            "3m Strasse":  ("road_small",  3.0), "Verbindung":   ("road_local",  4.0),
+            "Einfahrt":    ("road_small",  3.0), "Ausfahrt":     ("road_small",  3.0),
+            "Zufahrt":     ("road_small",  3.0), "Dienstzufahrt":("road_small",  2.5),
+            "Raststaette": ("road_local",  4.0), "2m Weg":       ("path",        2.0),
+            "2m Wegfragment": ("path", 2.0),     "1m Weg":       ("path",        1.5),
+            "1m Wegfragment": ("path", 1.5),     "Markierte Spur":("path",       1.5),
         }
+        _SKIP = {"Platz", "Klettersteig", "Faehre", "Autozug"}
 
-        segments = []
+        lyr.SetSpatialFilterRect(bbox["min_e"], bbox["min_n"], bbox["max_e"], bbox["max_n"])
         defn = lyr.GetLayerDefn()
         obj_idx = defn.GetFieldIndex("OBJEKTART")
-        lyr.SetSpatialFilterRect(bbox["min_e"], bbox["min_n"], bbox["max_e"], bbox["max_n"])
+        base_elev = config.base_elevation
 
+        roads: list[RoadLine] = []
         for feat in lyr:
             geom = feat.GetGeometryRef()
             if geom is None:
                 continue
             raw = feat.GetField(obj_idx) if obj_idx >= 0 else None
-            width = _WIDTHS.get(raw, 4.0)
-            base_elev = float(config_dict.get("base_elevation", 0.0))
-            pts = [
-                (geom.GetX(i), geom.GetY(i), (geom.GetZ(i) if geom.Is3D() else base_elev) - base_elev)
+            if raw in _SKIP:
+                continue
+            road_type, width_m = _OBJEKTART_MAP.get(raw, ("road_local", 4.0))
+            coords = [
+                (geom.GetX(i), geom.GetY(i),
+                 geom.GetZ(i) if geom.Is3D() else base_elev)
                 for i in range(geom.GetPointCount())
             ]
-            if len(pts) >= 2:
-                segments.append(RoadSegment(points=pts, half_width=width / 2))
-        return segments
+            if len(coords) >= 2:
+                roads.append(RoadLine(id=str(feat.GetFID()), coords_lv95=coords,
+                                      width_m=width_m, road_type=road_type))
+
+        if not roads:
+            return [], 0
+
+        spline_dicts, road_segments = smooth_roads(roads, config, dem_ds)
+
+        # Save spline JSON for 03_roads.py and Babylon.js ribbon extrusion.
+        out_json = output_dir(config_dict) / "road_splines.json"
+        out_json.write_text(_json.dumps(spline_dicts, separators=(',', ':')))
+        print(f"  Splines saved → {out_json}  ({len(spline_dicts)} roads)", flush=True)
+
+        return road_segments, len(spline_dicts)
+
     except Exception as e:
-        print(f"  WARNING: road conforming skipped ({e})", flush=True)
-        return []
+        import traceback
+        print(f"  WARNING: road smoothing skipped ({e})", flush=True)
+        traceback.print_exc()
+        return [], 0
 
 
 def _fetch_swissimage(config_dict: dict, out_dir: Path, tex_size: int = 1024) -> str | None:

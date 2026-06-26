@@ -61,7 +61,7 @@ def write_buildings_glb(buildings: list[dict], out_path: Path) -> None:
             indices.extend([base, base + i, base + i + 1])
 
     for b in buildings:
-        fp   = b["footprint"]   # [[x, z], ...]  (glTF X=east, Z=-north)
+        fp   = b["footprint"]   # [[east_enu, north_enu], ...]  — glTF Z-negation applied below
         h    = b["height"]
         by   = b["base_y"]
         roof = b["roof"]

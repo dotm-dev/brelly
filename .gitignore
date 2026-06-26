@@ -27,6 +27,7 @@ run_*.ps1
 *.log
 run_dev_logs.txt
 pip_logs.txt
+logs.txt
 
 # Python
 __pycache__/

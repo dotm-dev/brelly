@@ -1,14 +1,15 @@
 # pipeline/scripts/_terrain_conform.py
 """Stamp road elevations into a heightmap numpy array."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 import math
 
 
 @dataclass
 class RoadSegment:
-    points: list   # [(e, n, z), ...] in LV95 metres
-    half_width: float  # metres
+    points: list          # [(e, n, local_z), ...] where local_z = abs_elev − base_elevation
+    half_width: float     # metres
+    cut_allowed: bool = True   # True → also lower terrain (cut); False → only raise (fill)
 
 
 def _closest_point_on_segment(px, py, ax, ay, bx, by):
@@ -89,7 +90,11 @@ def conform_to_roads(
                 ),
             )
 
-            target = arr[row_lo:row_hi + 1, col_lo:col_hi + 1] * (1.0 - weight) + road_z * weight
-            # Only raise terrain, never lower
-            sub = arr[row_lo:row_hi + 1, col_lo:col_hi + 1]
-            np.maximum(sub, target, out=sub)
+            sub    = arr[row_lo:row_hi + 1, col_lo:col_hi + 1]
+            target = sub * (1.0 - weight) + road_z * weight
+            if seg.cut_allowed:
+                # True cut-and-fill: blend fully toward road elevation.
+                np.copyto(sub, target, where=(weight > 0))
+            else:
+                # Legacy fill-only: never lower terrain.
+                np.maximum(sub, target, out=sub)

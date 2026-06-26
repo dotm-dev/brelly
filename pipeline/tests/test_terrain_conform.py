@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -36,9 +37,17 @@ def test_blend_zone_partial():
     val = arr[13, 10]
     assert 0.0 < val < 10.0
 
-def test_road_lower_than_terrain_not_applied():
-    """Road below terrain is ignored — we never dig a trench."""
+def test_cut_lowers_terrain_when_road_below():
+    """True cut-and-fill: road below terrain lowers the terrain to road level."""
     arr = np.full((20, 20), 20.0)
-    seg = _make_seg(0, 10, 5.0, 19, 10, 5.0, width=4.0)
+    seg = _make_seg(0, 10, 5.0, 19, 10, 5.0, width=4.0)   # cut_allowed=True by default
+    conform_to_roads(arr, [seg], min_e=0.0, min_n=0.0, cell_size=1.0, blend_cells=2)
+    assert arr[10, 10] == pytest.approx(5.0)
+
+
+def test_fill_only_ignores_road_below_terrain():
+    """With cut_allowed=False (legacy fill-only), road below terrain is ignored."""
+    arr = np.full((20, 20), 20.0)
+    seg = RoadSegment(points=[(0, 10, 5.0), (19, 10, 5.0)], half_width=2.0, cut_allowed=False)
     conform_to_roads(arr, [seg], min_e=0.0, min_n=0.0, cell_size=1.0, blend_cells=2)
     assert arr[10, 10] == 20.0
