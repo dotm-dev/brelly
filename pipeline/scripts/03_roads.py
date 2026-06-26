@@ -198,7 +198,7 @@ def _build_road_meshes_from_splines(spline_dicts: list[dict]) -> dict[str, tuple
 
         # _miter_perp expects (East, elev, North) — index 0=East, 2=North.
         # Spline nodes use glTF convention where Z=−North, so negate Z for miter calc.
-        pts_gltf   = [(nd["x"], nd["y"] + node_lift[i], nd["z"]) for i, nd in enumerate(nodes)]
+        pts_gltf   = [(nd["x"], nd["y"] + node_lift[i] + ROAD_LIFT, nd["z"]) for i, nd in enumerate(nodes)]
         pts_miter  = [(nd["x"], nd["y"],                -nd["z"]) for nd in nodes]
 
         left_pts:  list[tuple[float, float, float]] = []
