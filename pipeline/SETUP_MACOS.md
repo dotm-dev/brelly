@@ -73,19 +73,7 @@ python -c "from osgeo import gdal; print(gdal.__version__)"
 python -c "import pyproj, shapely, numpy; print('OK')"
 ```
 
-## 6. Install Blender
-
-Download from https://www.blender.org/download/ and install the `.dmg`.
-
-```bash
-echo 'export PATH="/Applications/Blender.app/Contents/MacOS:$PATH"' >> ~/.zprofile
-source ~/.zprofile
-blender --version   # Blender 4.x.x
-```
-
-> Without Blender, steps 02–04 produce empty placeholder GLBs.
-
-## 7. Install gltfpack (optional)
+## 6. Install gltfpack (optional)
 
 Compresses `.glb` output. Skip if you don't need it.
 
@@ -100,7 +88,7 @@ sudo chmod +x /usr/local/bin/gltfpack
 sudo xattr -d com.apple.quarantine /usr/local/bin/gltfpack
 ```
 
-## 8. Download source data
+## 7. Download source data
 
 Both datasets are free from swisstopo. Create a folder per map area inside `data/` (replace `my_area` with your chosen name):
 
@@ -127,7 +115,7 @@ Brelly/
         └── swissTLM3D.gpkg
 ```
 
-## 9. Create a map config
+## 8. Create a map config
 
 ```bash
 cp pipeline/config/example.json pipeline/config/my_area.json
@@ -143,12 +131,13 @@ Edit at minimum:
 | `center_n` | LV95 northing |
 | `radius_m` | Half-width in metres (500 = 1 km × 1 km) |
 | `base_elevation` | Approximate ground elevation in metres |
+| `terrain_cell_m` | DEM sampling resolution in metres (default 1.0) |
 | `source_data.dem` | e.g. `data/my_area/alti3d.vrt` |
 | `source_data.tlm` | e.g. `data/my_area/swissTLM3D.gpkg` |
 
 Find LV95 coordinates: https://map.geo.admin.ch — right-click any point.
 
-## 10. Run the pipeline
+## 9. Run the pipeline
 
 ```bash
 python pipeline/run_pipeline.py pipeline/config/my_area.json
@@ -156,7 +145,7 @@ python pipeline/run_pipeline.py pipeline/config/my_area.json
 
 Output lands in `maps/my_area/`.
 
-## 11. Run the tests
+## 10. Run the tests
 
 ```bash
 pytest pipeline/tests/
@@ -171,7 +160,6 @@ pytest pipeline/tests/
 | `command not found: pip` | `python3.12 -m pip install -r pipeline/requirements.txt` |
 | `FileNotFoundError: gdal-config` | `brew install gdal`, then retry pip |
 | `gdal` fails on Python 3.14+ | Use Python 3.12 (step 2) |
-| `WARNING: Blender not found` | Add Blender to PATH (step 6) |
 | `WARNING: TLM source not found` | Check `source_data.tlm` path in config — relative to project root |
-| `WARNING: gltfpack not found` | Optional — install via step 7 or ignore |
+| `WARNING: gltfpack not found` | Optional — install via step 6 or ignore |
 | `FAILED: scripts/XX_*.py exited with code N` | Read the lines above the error |
