@@ -10,6 +10,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 
 @dataclass
@@ -162,6 +163,26 @@ def check_config(project_root: Path) -> CheckResult:
         fix_macos="Use the New Map screen to create one",
         fix_windows="Use the New Map screen to create one",
     )
+
+
+_CHECK_FUNCS: dict[str, Callable[[Path], CheckResult]] = {
+    "Homebrew": lambda root: check_command("brew", "Homebrew", fix_macos="See https://brew.sh"),
+    "Python 3.12": lambda root: check_python312(),
+    "GDAL system library": lambda root: check_gdal_system(),
+    "Virtual environment": check_venv,
+    "Python dependencies": check_deps,
+    "Blender": lambda root: check_blender(),
+    "gltfpack": lambda root: check_gltfpack(),
+    "DEM data": check_dem_data,
+    "TLM data": check_tlm_data,
+    "Map config": check_config,
+}
+
+
+def run_single_check(name: str, project_root: Path) -> CheckResult:
+    """Re-run one named check by its CheckResult.name (see run_all_checks
+    for the full ordered set). Raises KeyError for an unknown name."""
+    return _CHECK_FUNCS[name](project_root)
 
 
 def run_all_checks(project_root: Path) -> list[CheckResult]:

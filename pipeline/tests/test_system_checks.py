@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from unittest.mock import patch
+import pytest
 
 from system_checks import CheckResult, run_all_checks, check_command
 
@@ -75,3 +76,30 @@ def test_check_tlm_data_false_when_no_data_and_no_config(tmp_path):
     from system_checks import check_tlm_data
     result = check_tlm_data(project_root=tmp_path)
     assert result.ok is False
+
+
+def test_run_single_check_blender_matches_check_blender():
+    from system_checks import run_single_check, check_blender
+    result = run_single_check("Blender", project_root=Path("."))
+    expected = check_blender()
+    assert result.name == expected.name
+    assert result.ok == expected.ok
+
+
+def test_run_single_check_map_config_uses_project_root(tmp_path):
+    from system_checks import run_single_check
+    result = run_single_check("Map config", project_root=tmp_path)
+    assert result.name == "Map config"
+    assert result.ok is False
+
+    config_dir = tmp_path / "pipeline" / "config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "my_map.json").write_text('{"name": "my_map"}')
+    result2 = run_single_check("Map config", project_root=tmp_path)
+    assert result2.ok is True
+
+
+def test_run_single_check_unknown_name_raises_keyerror():
+    from system_checks import run_single_check
+    with pytest.raises(KeyError):
+        run_single_check("Nonexistent Check", project_root=Path("."))
