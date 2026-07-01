@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
@@ -143,15 +144,21 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             return
 
         map_data_dir = DATA_DIR / name
-        map_data_dir.mkdir(parents=True, exist_ok=True)
         vrt_path = map_data_dir / "alti3d.vrt"
-        if not build_vrt(tif_files, vrt_path):
+        try:
+            map_data_dir.mkdir(parents=True, exist_ok=True)
+            vrt_built = build_vrt(tif_files, vrt_path)
+        except OSError as exc:
+            self._status_var.set(f"Failed to prepare DEM data folder: {exc}")
+            return
+        if not vrt_built:
             self._status_var.set("Failed to build VRT — is GDAL installed?")
             return
 
         try:
             config = build_new_map_config(name, name, str(vrt_path), tlm_path)
         except Exception as exc:
+            shutil.rmtree(map_data_dir, ignore_errors=True)
             self._status_var.set(f"Failed to derive config from DEM: {exc}")
             return
 
