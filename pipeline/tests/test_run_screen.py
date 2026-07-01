@@ -1,11 +1,10 @@
-# pipeline/tests/test_app.py
+# pipeline/tests/test_run_screen.py
 import sys
 import json
-import tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app import scan_configs, build_run_config
+from screens.run import scan_configs, build_run_config, step_labels
 
 
 def test_scan_configs_finds_json(tmp_path):
@@ -59,3 +58,14 @@ def test_build_run_config_empty_skip(tmp_path):
     build_run_config(cfg_path, set(), out_path)
     result = json.loads(out_path.read_text())
     assert result["skip_steps"] == []
+
+
+def test_step_labels_includes_lod():
+    """Regression test: the old app.py STEPS list dropped 'lod' when step 08
+    was added to run_pipeline.py. step_labels() must be derived from
+    run_pipeline.SCRIPTS so this can't happen again."""
+    labels = step_labels()
+    assert "lod" in labels
+    assert "download" in labels
+    assert "compress" in labels
+    assert len(labels) == 10
