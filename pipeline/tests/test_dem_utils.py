@@ -42,3 +42,9 @@ def test_build_vrt_empty_tile_list_returns_false(tmp_path):
     result = build_vrt([], vrt_path)
     assert result is False
     assert not vrt_path.exists()
+
+
+def test_build_vrt_invalid_tile_returns_false(tmp_path):
+    vrt_path = tmp_path / "mosaic.vrt"
+    result = build_vrt([str(tmp_path / "does_not_exist.tif")], vrt_path)
+    assert result is False

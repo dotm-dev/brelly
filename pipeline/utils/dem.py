@@ -14,10 +14,13 @@ def build_vrt(tif_paths: list[str], vrt_path: Path) -> bool:
     except ImportError:
         return False
 
-    vrt_opts = gdal.BuildVRTOptions(resampleAlg="nearest")
-    ds = gdal.BuildVRT(str(vrt_path), tif_paths, options=vrt_opts)
-    if ds is None:
+    try:
+        vrt_opts = gdal.BuildVRTOptions(resampleAlg="nearest")
+        ds = gdal.BuildVRT(str(vrt_path), tif_paths, options=vrt_opts)
+        if ds is None:
+            return False
+        ds.FlushCache()
+        ds = None
+        return True
+    except Exception:
         return False
-    ds.FlushCache()
-    ds = None
-    return True
