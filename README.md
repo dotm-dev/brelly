@@ -12,11 +12,16 @@ A game that places you on real Swiss terrain. This repo contains:
 
 ### 1. Install dependencies
 
-Follow the setup guide for your OS:
+Run the desktop app — its **System Check** tab tells you exactly what's
+missing and how to install it per OS:
 
-- **macOS** → [`pipeline/SETUP_MACOS.md`](pipeline/SETUP_MACOS.md)
-- **Windows** → [`pipeline/SETUP_WINDOWS.md`](pipeline/SETUP_WINDOWS.md)
-- **Interactive** → open [`pipeline/setup-guide/index.html`](pipeline/setup-guide/index.html) in a browser
+```bash
+python pipeline/app.py
+```
+
+For copy-paste command references without the app, see
+[`pipeline/SETUP_MACOS.md`](pipeline/SETUP_MACOS.md) /
+[`pipeline/SETUP_WINDOWS.md`](pipeline/SETUP_WINDOWS.md).
 
 Requirements: Python 3.12, GDAL, Blender, Node.js
 
@@ -29,15 +34,15 @@ Download from swisstopo for your area of interest:
 
 Place DEM tiles + a VRT index and the TLM GeoPackage under `data/<map_name>/`.
 
-### 3. Create a map config
+### 3. Create a map
 
-Copy [`pipeline/config/example.json`](pipeline/config/example.json) to `pipeline/config/<my_map>.json` and fill in:
+Use the **New Map** tab in the app: give it a name, point it at your
+downloaded `.tif` DEM tiles, and (once) your swissTLM3D GeoPackage. It
+derives the map's centre, radius, and base elevation from the DEM extent
+automatically and writes the config for you.
 
-- `center_e` / `center_n` — LV95 coordinates of your area centre
-- `base_elevation` — ground elevation at the origin (metres)
-- `source_data.dem` / `source_data.tlm` — paths to your data files
-
-See [`pipeline/README.md`](pipeline/README.md) for the full field reference.
+To edit fields by hand instead, see [`pipeline/README.md`](pipeline/README.md)
+for the full config field reference.
 
 ### 4. Run the pipeline
 

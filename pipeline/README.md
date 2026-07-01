@@ -2,7 +2,7 @@
 
 Converts Swiss geodata (DEM + TLM vector layers) into a self-contained map bundle ready to load in the Brelly game engine.
 
-> **First time?** Try the [interactive setup guide](setup-guide/index.html) (open in browser) or read the text guides: [macOS](SETUP_MACOS.md) · [Windows](SETUP_WINDOWS.md)
+> **First time?** Run `python pipeline/app.py` and use its **System Check** tab, or read the text guides: [macOS](SETUP_MACOS.md) · [Windows](SETUP_WINDOWS.md)
 
 ## Output
 
@@ -22,7 +22,10 @@ maps/my_area/
 
 ## Configuration
 
-Create a JSON file based on [`pipeline/config/example.json`](config/example.json):
+The easiest way to create a config is the **New Map** tab in
+`python pipeline/app.py` — see the root [`README.md`](../README.md) quick
+start. To create or edit one by hand, base it on
+[`pipeline/config/example.json`](config/example.json):
 
 ```json
 {

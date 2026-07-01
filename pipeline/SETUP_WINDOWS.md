@@ -1,6 +1,9 @@
 # Pipeline Setup Guide — Windows
 
-> **Prefer a visual guide?** Open [`pipeline/setup-guide/index.html`](setup-guide/index.html) in your browser for an interactive step-by-step walkthrough.
+> **Primary path:** run `python pipeline/app.py` and use its **System
+> Check** tab — it runs these same checks and shows you exactly which
+> command below to run for whatever's missing. This document is the
+> reference for people who prefer copy-pasting commands directly.
 
 > **macOS?** See [SETUP_MACOS.md](SETUP_MACOS.md).
 
