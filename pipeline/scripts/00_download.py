@@ -58,12 +58,7 @@ def main(config_path: str) -> None:
 
 def _rebuild_vrt(vrt_path: Path, data_dir: Path) -> None:
     """Rebuild the VRT index from all .tif files in data_dir."""
-    try:
-        from osgeo import gdal
-        gdal.UseExceptions()
-    except ImportError:
-        print("WARNING: GDAL not available — VRT not rebuilt. Terrain step may use stale data.")
-        return
+    from utils.dem import build_vrt
 
     tif_files = sorted(str(p) for p in data_dir.glob("*.tif"))
     if not tif_files:
@@ -71,14 +66,10 @@ def _rebuild_vrt(vrt_path: Path, data_dir: Path) -> None:
         return
 
     print(f"Rebuilding VRT from {len(tif_files)} tiles → {vrt_path.name}", flush=True)
-    vrt_opts = gdal.BuildVRTOptions(resampleAlg="nearest")
-    ds = gdal.BuildVRT(str(vrt_path), tif_files, options=vrt_opts)
-    if ds is None:
-        print("ERROR: VRT rebuild failed.", file=sys.stderr)
-    else:
-        ds.FlushCache()
-        ds = None
+    if build_vrt(tif_files, vrt_path):
         print("VRT rebuilt.")
+    else:
+        print("ERROR: VRT rebuild failed (GDAL unavailable or build failed).", file=sys.stderr)
 
 
 if __name__ == "__main__":
