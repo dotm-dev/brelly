@@ -4,6 +4,7 @@ the duplicated logic previously in check_system.sh, check_system.ps1, and
 setup-guide/steps.js."""
 from __future__ import annotations
 
+import json
 import platform
 import shutil
 import subprocess
@@ -106,8 +107,31 @@ def check_gltfpack() -> CheckResult:
     )
 
 
+def _any_config_has_valid_source(project_root: Path, source_key: str) -> bool:
+    """Check every non-example map config for a resolvable source_data path
+    (e.g. 'dem' or 'tlm'). A config counts even if its data lives outside
+    data/<name>/ — e.g. a shared swissTLM3D file reused across maps."""
+    config_dir = project_root / "pipeline" / "config"
+    if not config_dir.exists():
+        return False
+    for p in config_dir.glob("*.json"):
+        if p.stem == "example" or p.name.startswith("."):
+            continue
+        try:
+            data = json.loads(p.read_text())
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        path_str = data.get("source_data", {}).get(source_key)
+        if path_str and (project_root / path_str).exists():
+            return True
+    return False
+
+
 def check_dem_data(project_root: Path) -> CheckResult:
-    found = any((project_root / "data").glob("*/alti3d.vrt")) if (project_root / "data").exists() else False
+    found = (
+        (any((project_root / "data").glob("*/alti3d.vrt")) if (project_root / "data").exists() else False)
+        or _any_config_has_valid_source(project_root, "dem")
+    )
     return CheckResult(
         name="DEM data", ok=found,
         fix_macos="Download swissALTI3D tiles into data/<map_name>/ (see New Map screen)",
@@ -117,7 +141,10 @@ def check_dem_data(project_root: Path) -> CheckResult:
 
 def check_tlm_data(project_root: Path) -> CheckResult:
     data_dir = project_root / "data"
-    found = any(data_dir.glob("*/*.gpkg")) if data_dir.exists() else False
+    found = (
+        (any(data_dir.glob("*/*.gpkg")) if data_dir.exists() else False)
+        or _any_config_has_valid_source(project_root, "tlm")
+    )
     return CheckResult(
         name="TLM data", ok=found,
         fix_macos="Download swissTLM3D and set its path on the New Map screen",
