@@ -31,7 +31,7 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
         super().__init__(parent)
         self._on_all_ok = on_all_ok
         self._is_windows = platform.system() == "Windows"
-        self._row_ok: dict[str, bool] = {}
+        self._last_results: list = []
         self._build_ui()
         self.recheck()
 
@@ -48,14 +48,16 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
         return self._all_ok
 
     def recheck(self) -> None:
+        self._last_results = run_all_checks(project_root=PROJECT_ROOT)
+        self._render_rows()
+
+    def _render_rows(self) -> None:
         for child in self._list_frame.winfo_children():
             child.destroy()
 
-        results = run_all_checks(project_root=PROJECT_ROOT)
-        self._row_ok = {r.name: r.ok for r in results}
-        self._all_ok = all(self._row_ok.values())
+        self._all_ok = all(r.ok for r in self._last_results)
 
-        for result in results:
+        for result in self._last_results:
             self._build_row(result)
 
         self._maybe_notify_all_ok()
@@ -88,17 +90,11 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
                 ).pack(side="left", padx=(6, 0))
 
     def _recheck_one(self, name: str) -> None:
-        result = run_single_check(name, project_root=PROJECT_ROOT)
-        self._row_ok[name] = result.ok
-
-        for child in self._list_frame.winfo_children():
-            child.destroy()
-        results = run_all_checks(project_root=PROJECT_ROOT)
-        for r in results:
-            self._build_row(result if r.name == name else r)
-
-        self._all_ok = all(self._row_ok.values())
-        self._maybe_notify_all_ok()
+        fresh = run_single_check(name, project_root=PROJECT_ROOT)
+        self._last_results = [
+            fresh if r.name == name else r for r in self._last_results
+        ]
+        self._render_rows()
 
     def _copy_to_clipboard(self, text: str) -> None:
         self.clipboard_clear()
