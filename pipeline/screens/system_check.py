@@ -1,6 +1,8 @@
 # pipeline/screens/system_check.py
 """System Check screen: runs system_checks.run_all_checks() and renders a
-checklist, expanding failed items with the OS-specific fix command."""
+checklist, expanding failed items with the OS-specific fix command. Each
+row can be individually rechecked, and any visible fix command can be
+copied to the clipboard."""
 from __future__ import annotations
 
 import platform
@@ -8,7 +10,7 @@ from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from system_checks import run_all_checks
+from system_checks import run_all_checks, run_single_check
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
@@ -29,6 +31,7 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
         super().__init__(parent)
         self._on_all_ok = on_all_ok
         self._is_windows = platform.system() == "Windows"
+        self._row_ok: dict[str, bool] = {}
         self._build_ui()
         self.recheck()
 
@@ -49,19 +52,58 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
             child.destroy()
 
         results = run_all_checks(project_root=PROJECT_ROOT)
-        self._all_ok = all(r.ok for r in results)
+        self._row_ok = {r.name: r.ok for r in results}
+        self._all_ok = all(self._row_ok.values())
 
         for result in results:
-            row = tk.Frame(self._list_frame)
-            row.pack(fill="x", pady=2, anchor="w")
-            icon = "✓" if result.ok else "✗"
-            color = "#6a9955" if result.ok else "#f44747"
-            tk.Label(row, text=f"{icon}  {result.name}", fg=color).pack(anchor="w")
-            if not result.ok:
-                fix = result.fix_windows if self._is_windows else result.fix_macos
-                if fix:
-                    tk.Label(row, text=f"      → {fix}", fg="#94a3b8",
-                             font=("Courier", 10)).pack(anchor="w")
+            self._build_row(result)
 
+        self._maybe_notify_all_ok()
+
+    def _build_row(self, result) -> None:
+        row = tk.Frame(self._list_frame)
+        row.pack(fill="x", pady=2, anchor="w")
+
+        header = tk.Frame(row)
+        header.pack(fill="x", anchor="w")
+
+        icon = "✓" if result.ok else "✗"
+        color = "#6a9955" if result.ok else "#f44747"
+        tk.Label(header, text=f"{icon}  {result.name}", fg=color).pack(side="left")
+        tk.Button(
+            header, text="↻", width=2,
+            command=lambda: self._recheck_one(result.name),
+        ).pack(side="left", padx=(6, 0))
+
+        if not result.ok:
+            fix = result.fix_windows if self._is_windows else result.fix_macos
+            if fix:
+                fix_row = tk.Frame(row)
+                fix_row.pack(fill="x", anchor="w")
+                tk.Label(fix_row, text=f"      → {fix}", fg="#94a3b8",
+                         font=("Courier", 10)).pack(side="left")
+                tk.Button(
+                    fix_row, text="Copy", font=("", 9),
+                    command=lambda f=fix: self._copy_to_clipboard(f),
+                ).pack(side="left", padx=(6, 0))
+
+    def _recheck_one(self, name: str) -> None:
+        result = run_single_check(name, project_root=PROJECT_ROOT)
+        self._row_ok[name] = result.ok
+
+        for child in self._list_frame.winfo_children():
+            child.destroy()
+        results = run_all_checks(project_root=PROJECT_ROOT)
+        for r in results:
+            self._build_row(result if r.name == name else r)
+
+        self._all_ok = all(self._row_ok.values())
+        self._maybe_notify_all_ok()
+
+    def _copy_to_clipboard(self, text: str) -> None:
+        self.clipboard_clear()
+        self.clipboard_append(text)
+
+    def _maybe_notify_all_ok(self) -> None:
         if self._all_ok and self._on_all_ok:
             self._on_all_ok()
