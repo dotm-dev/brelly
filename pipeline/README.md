@@ -2,7 +2,11 @@
 
 Converts Swiss geodata (DEM + TLM vector layers) into a self-contained map bundle ready to load in the Brelly game engine.
 
-> **First time?** Run `python pipeline/app.py` and use its **System Check** tab, or read the text guides: [macOS](SETUP_MACOS.md) · [Windows](SETUP_WINDOWS.md)
+> **First time?** Run the installer for your OS — `bash setup.sh` (macOS) or
+> `.\setup.ps1` (Windows) — it checks requirements, asks before installing
+> anything missing, and launches the app. To check status without installing
+> anything, run `python pipeline/app.py` and use its **System Check** tab
+> instead. Text guides: [macOS](SETUP_MACOS.md) · [Windows](SETUP_WINDOWS.md)
 
 ## Output
 

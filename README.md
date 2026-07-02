@@ -12,15 +12,16 @@ A game that places you on real Swiss terrain. This repo contains:
 
 ### 1. Install dependencies
 
-Run the desktop app — its **System Check** tab tells you exactly what's
-missing and how to install it per OS:
+Run the installer for your OS — it checks each requirement, asks before
+installing anything missing, and launches the app when done:
 
-```bash
-python pipeline/app.py
-```
+- **macOS:** `bash pipeline/setup.sh`
+- **Windows:** `.\pipeline\setup.ps1`
 
-For copy-paste command references without the app, see
-[`pipeline/SETUP_MACOS.md`](pipeline/SETUP_MACOS.md) /
+Prefer to do it by hand, or just want a status check without installing
+anything? Run `python pipeline/app.py` directly — its **System Check** tab
+shows the same checklist with copy-paste fix commands, without taking any
+action on its own. Command references: [`pipeline/SETUP_MACOS.md`](pipeline/SETUP_MACOS.md) /
 [`pipeline/SETUP_WINDOWS.md`](pipeline/SETUP_WINDOWS.md).
 
 Requirements: Python 3.12, GDAL, Blender, Node.js
