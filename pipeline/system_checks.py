@@ -165,6 +165,10 @@ def check_config(project_root: Path) -> CheckResult:
     )
 
 
+# If you add a new installable dependency check here, also update the
+# matching install step in pipeline/setup.sh and pipeline/setup.ps1 — they
+# hand-implement install logic for these checks and won't pick up new
+# entries automatically.
 _CHECK_FUNCS: dict[str, Callable[[Path], CheckResult]] = {
     "Homebrew": lambda root: check_command("brew", "Homebrew", fix_macos="See https://brew.sh"),
     "Python 3.12": lambda root: check_python312(),
