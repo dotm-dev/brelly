@@ -1,11 +1,14 @@
 # pipeline/setup.ps1
-# One-command installer: checks each Brelly pipeline requirement, asks to
-# install what's missing, then launches the app. Run from anywhere:
+# One-command installer: checks each Brelly pipeline requirement and
+# installs what's missing (no per-step prompts by default), then launches
+# the app. Run from anywhere:
 #   .\pipeline\setup.ps1
-#   .\pipeline\setup.ps1 -Verbose   # stream full installer output
+#   .\pipeline\setup.ps1 -Verbose        # stream full installer output
+#   .\pipeline\setup.ps1 -Interactive    # confirm before each install
 
 param(
-    [switch]$Verbose
+    [switch]$Verbose,
+    [switch]$Interactive
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +17,9 @@ Set-Location $ProjectRoot
 
 function Confirm-Step {
     param([string]$Prompt)
+    if (-not $Interactive) {
+        return $true
+    }
     $reply = Read-Host "$Prompt [y/N]"
     return $reply -match '^[Yy]'
 }

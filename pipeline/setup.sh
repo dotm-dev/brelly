@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # pipeline/setup.sh
-# One-command installer: checks each Brelly pipeline requirement, asks to
-# install what's missing, then launches the app. Run from anywhere:
+# One-command installer: checks each Brelly pipeline requirement and
+# installs what's missing (no per-step prompts by default), then launches
+# the app. Run from anywhere:
 #   bash pipeline/setup.sh
-#   bash pipeline/setup.sh --verbose   # stream full installer output
+#   bash pipeline/setup.sh --verbose      # stream full installer output
+#   bash pipeline/setup.sh --interactive  # confirm before each install
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 VERBOSE=0
+INTERACTIVE=0
 for arg in "$@"; do
   case "$arg" in
     -v|--verbose) VERBOSE=1 ;;
+    -i|--interactive) INTERACTIVE=1 ;;
   esac
 done
 
@@ -30,6 +34,9 @@ fi
 
 confirm() {
   local prompt="$1"
+  if [ "$INTERACTIVE" -eq 0 ]; then
+    return 0
+  fi
   read -r -p "$prompt [y/N] " reply
   case "$reply" in
     [yY][eE][sS]|[yY]) return 0 ;;
