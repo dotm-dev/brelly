@@ -57,13 +57,43 @@ if (-not (Get-Command blender -ErrorAction SilentlyContinue)) {
 }
 Write-Host "OK Blender"
 
-# 3. gltfpack (no package-manager formula on Windows — manual only)
+# 3. Node.js (needed to install gltfpack, which ships as an npm package)
+$nodeOk = [bool](Get-Command npm -ErrorAction SilentlyContinue)
+if (-not $nodeOk) {
+    Write-Host ""
+    Write-Host "X Node.js not found." -ForegroundColor Red
+    Write-Host "  Will run: winget install OpenJS.NodeJS.LTS"
+    if (Confirm-Step "Proceed?") {
+        winget install OpenJS.NodeJS.LTS
+    } else {
+        Step-Failed "Node.js is required to install gltfpack."
+    }
+}
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Step-Failed "Node.js still not found after install attempt."
+}
+Write-Host "OK Node.js"
+
+# 4. gltfpack (published on npm with prebuilt binaries)
 if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
-    Step-Failed "gltfpack not found. Download manually from https://github.com/zeux/meshoptimizer/releases, add it to PATH, then re-run this script."
+    Write-Host ""
+    Write-Host "X gltfpack not found." -ForegroundColor Red
+    Write-Host "  Will run: npm install -g gltfpack"
+    if (Confirm-Step "Proceed?") {
+        npm install -g gltfpack
+        if ($LASTEXITCODE -ne 0) {
+            Step-Failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
+        }
+    } else {
+        Step-Failed "gltfpack is required. Download manually from https://github.com/zeux/meshoptimizer/releases"
+    }
+}
+if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
+    Step-Failed "gltfpack still not found after install attempt."
 }
 Write-Host "OK gltfpack"
 
-# 4. Virtual environment
+# 5. Virtual environment
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
     Write-Host ""
     Write-Host "X Virtual environment not found." -ForegroundColor Red
@@ -79,7 +109,7 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
 }
 Write-Host "OK Virtual environment"
 
-# 5. Python dependencies (also verifies GDAL — see note above)
+# 6. Python dependencies (also verifies GDAL — see note above)
 $depsOk = $false
 try {
     & .venv\Scripts\python.exe -c "from osgeo import gdal; import pyproj, shapely, numpy" 2>$null
@@ -101,7 +131,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK Python dependencies"
 
-# 6. Launch the app
+# 7. Launch the app
 Write-Host ""
 Write-Host "All requirements satisfied. Launching Brelly Pipeline app..."
 & .venv\Scripts\python.exe pipeline\app.py

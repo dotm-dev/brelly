@@ -105,14 +105,29 @@ fi
 command -v blender >/dev/null 2>&1 || step_failed "Blender still not found after install attempt."
 echo "✓ Blender"
 
-# 5. gltfpack
+# 5. Node.js (needed to install gltfpack, which ships as an npm package —
+# there's no Homebrew formula for it)
+if ! command -v npm >/dev/null 2>&1; then
+  echo ""
+  echo "✗ Node.js not found."
+  echo "  Will run: brew install node"
+  if confirm "Proceed?"; then
+    brew install node
+  else
+    step_failed "Node.js is required to install gltfpack."
+  fi
+fi
+command -v npm >/dev/null 2>&1 || step_failed "Node.js still not found after install attempt."
+echo "✓ Node.js"
+
+# 6. gltfpack (published on npm with prebuilt binaries; no Homebrew formula)
 if ! command -v gltfpack >/dev/null 2>&1; then
   echo ""
   echo "✗ gltfpack not found."
-  echo "  Will run: brew install gltfpack"
+  echo "  Will run: npm install -g gltfpack"
   if confirm "Proceed?"; then
-    if ! brew install gltfpack; then
-      step_failed "brew install gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
+    if ! npm install -g gltfpack; then
+      step_failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
     fi
   else
     step_failed "gltfpack is required. Download manually from https://github.com/zeux/meshoptimizer/releases"
@@ -121,7 +136,7 @@ fi
 command -v gltfpack >/dev/null 2>&1 || step_failed "gltfpack still not found after install attempt."
 echo "✓ gltfpack"
 
-# 6. Virtual environment
+# 7. Virtual environment
 if [ ! -f ".venv/bin/python3" ]; then
   echo ""
   echo "✗ Virtual environment not found."
@@ -135,7 +150,7 @@ fi
 [ -f ".venv/bin/python3" ] || step_failed "Virtual environment still missing after creation attempt."
 echo "✓ Virtual environment"
 
-# 7. Python dependencies
+# 8. Python dependencies
 if ! .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1; then
   echo ""
   echo "✗ Python dependencies not installed."
@@ -149,7 +164,7 @@ fi
 .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1 || step_failed "Dependencies still not importable after install attempt."
 echo "✓ Python dependencies"
 
-# 8. Launch the app
+# 9. Launch the app
 echo ""
 echo "All requirements satisfied. Launching Brelly Pipeline app..."
 exec .venv/bin/python3 pipeline/app.py
