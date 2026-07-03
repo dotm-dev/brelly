@@ -63,6 +63,20 @@ fi
 command -v python3.12 >/dev/null 2>&1 || step_failed "Python 3.12 still not found after install attempt."
 echo "✓ Python 3.12"
 
+# 2b. tkinter (app.py's GUI toolkit; Homebrew's python@3.12 doesn't bundle Tk)
+if ! python3.12 -c "import tkinter" >/dev/null 2>&1; then
+  echo ""
+  echo "✗ tkinter not found."
+  echo "  Will run: brew install python-tk@3.12"
+  if confirm "Proceed?"; then
+    brew install python-tk@3.12
+  else
+    step_failed "tkinter is required to launch the pipeline app."
+  fi
+fi
+python3.12 -c "import tkinter" >/dev/null 2>&1 || step_failed "tkinter still not importable after install attempt."
+echo "✓ tkinter"
+
 # 3. GDAL system library
 if ! command -v gdal-config >/dev/null 2>&1; then
   echo ""
