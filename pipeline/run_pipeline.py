@@ -33,6 +33,14 @@ def run(config_path: str) -> None:
     timings: list[tuple[str, float]] = []
     overall_start = time.monotonic()
 
+    # The in-progress -> done overwrite below only works on a real terminal
+    # (cursor-up + clear-line escape codes). Piped output — e.g. the Run
+    # tab's log pane, which strips ANSI codes it can't render — has no way
+    # to overwrite a previous line, so both would show up as separate
+    # lines instead of one replacing the other. Fall back to plain
+    # start/done lines there instead of pretending the overwrite happened.
+    is_tty = sys.stdout.isatty()
+
     cfg = __import__("json").load(open(config_path))
     map_name = cfg.get("displayName") or cfg.get("name") or Path(config_path).stem
     print(f"\n  Map pipeline  ·  {map_name}")
@@ -44,10 +52,13 @@ def run(config_path: str) -> None:
         pct = int((idx - 1) / total * 100)
 
         if label in skip:
-            print(f"  {_bar(100)}  {label}  (skipped)")
+            print(f"  {_bar(100)}  {label}  (skipped)" if is_tty else f"  {label}  (skipped)")
             continue
 
-        print(f"  {_bar(pct)}  {label} …", flush=True)
+        if is_tty:
+            print(f"  {_bar(pct)}  {label} …", flush=True)
+        else:
+            print(f"  {label} …", flush=True)
 
         script_path = pipeline_dir / script
         t0 = time.monotonic()
@@ -69,8 +80,11 @@ def run(config_path: str) -> None:
                 print(result.stderr)
             sys.exit(result.returncode)
 
-        # overwrite the progress line with the completed step
-        print(f"\033[1A\033[2K  {_bar(100)}  {label}  ({elapsed:.1f}s)")
+        if is_tty:
+            # overwrite the progress line with the completed step
+            print(f"\033[1A\033[2K  {_bar(100)}  {label}  ({elapsed:.1f}s)")
+        else:
+            print(f"  {label}  done ({elapsed:.1f}s)")
 
     total_elapsed = time.monotonic() - overall_start
     print("  " + "─" * WIDTH)
