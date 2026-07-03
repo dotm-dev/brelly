@@ -1,5 +1,7 @@
 # Brelly
 
+> **New here?** If you just want to run the pipeline and see a map, skip to the [Quickstart guide](QUICKSTART.md) instead.
+
 A game that places you on real Swiss terrain. This repo contains:
 
 - **`pipeline/`** — Python pipeline that converts Swiss geodata (swisstopo DEM + TLM) into game-ready assets.
@@ -16,7 +18,10 @@ Run the installer for your OS — it checks each requirement, installs
 whatever's missing, and launches the app when done:
 
 - **macOS:** `bash pipeline/setup.sh`
-- **Windows:** `.\pipeline\setup.ps1`
+- **Windows:** `.\pipeline\setup.ps1` — run from **PowerShell**, not Command Prompt (`cmd.exe`).
+  Prefer running PowerShell **as Administrator** — otherwise Windows (UAC) may prompt for
+  admin approval separately for each package it installs. If PowerShell blocks the script
+  from running, first run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 Both install without prompting by default. Flags:
 
