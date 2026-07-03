@@ -6,6 +6,7 @@ copied to the clipboard."""
 from __future__ import annotations
 
 import platform
+import webbrowser
 from pathlib import Path
 
 import sys
@@ -22,6 +23,11 @@ except ModuleNotFoundError:
     tk = None  # type: ignore[assignment]
     ttk = None  # type: ignore[assignment]
     _TK_AVAILABLE = False
+
+_SECTIONS = [
+    ("requirement", "Requirements"),
+    ("data", "Map data"),
+]
 
 
 class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
@@ -57,8 +63,15 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
 
         self._all_ok = all(r.ok for r in self._last_results)
 
-        for result in self._last_results:
-            self._build_row(result)
+        for category, label in _SECTIONS:
+            results = [r for r in self._last_results if r.category == category]
+            if not results:
+                continue
+            tk.Label(
+                self._list_frame, text=label, font=("", 10, "bold"), fg="#64748b",
+            ).pack(fill="x", anchor="w", pady=(10, 2))
+            for result in results:
+                self._build_row(result)
 
         self._maybe_notify_all_ok()
 
@@ -72,10 +85,13 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
         icon = "✓" if result.ok else "✗"
         color = "#6a9955" if result.ok else "#f44747"
         tk.Label(header, text=f"{icon}  {result.name}", fg=color).pack(side="left")
+        # Recheck button anchored to the row's right edge, not immediately
+        # after the label — otherwise its horizontal position drifts with
+        # each row's label length.
         tk.Button(
             header, text="↻", width=2,
             command=lambda: self._recheck_one(result.name),
-        ).pack(side="left", padx=(6, 0))
+        ).pack(side="right")
 
         if not result.ok:
             fix = result.fix_windows if self._is_windows else result.fix_macos
@@ -84,10 +100,16 @@ class SystemCheckScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[
                 fix_row.pack(fill="x", anchor="w")
                 tk.Label(fix_row, text=f"      → {fix}", fg="#94a3b8",
                          font=("Courier", 10)).pack(side="left")
-                tk.Button(
-                    fix_row, text="Copy", font=("", 9),
-                    command=lambda f=fix: self._copy_to_clipboard(f),
-                ).pack(side="left", padx=(6, 0))
+                if result.url:
+                    tk.Button(
+                        fix_row, text="Open ↗", font=("", 9),
+                        command=lambda u=result.url: webbrowser.open(u),
+                    ).pack(side="left", padx=(6, 0))
+                else:
+                    tk.Button(
+                        fix_row, text="Copy", font=("", 9),
+                        command=lambda f=fix: self._copy_to_clipboard(f),
+                    ).pack(side="left", padx=(6, 0))
 
     def _recheck_one(self, name: str) -> None:
         fresh = run_single_check(name, project_root=PROJECT_ROOT)

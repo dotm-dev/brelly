@@ -20,6 +20,13 @@ class CheckResult:
     detail: str = ""
     fix_macos: str = ""
     fix_windows: str = ""
+    # "requirement" (installable tooling) or "data" (per-map source files/
+    # config the user provides) — lets the UI group them into separate
+    # sections instead of one flat list.
+    category: str = "requirement"
+    # Set for "data" checks that point at an external download page rather
+    # than a copy-pasteable shell command.
+    url: str = ""
 
 
 def check_command(cmd: str, name: str, fix_macos: str = "", fix_windows: str = "") -> CheckResult:
@@ -135,8 +142,10 @@ def check_dem_data(project_root: Path) -> CheckResult:
     )
     return CheckResult(
         name="DEM data", ok=found,
-        fix_macos="Download swissALTI3D tiles into data/<map_name>/ (see New Map screen)",
-        fix_windows="Download swissALTI3D tiles into data\\<map_name>\\ (see New Map screen)",
+        category="data",
+        fix_macos="Download swissALTI3D tiles, then set the path on the New Map screen",
+        fix_windows="Download swissALTI3D tiles, then set the path on the New Map screen",
+        url="https://www.swisstopo.admin.ch/en/height-model-swissalti3d",
     )
 
 
@@ -148,8 +157,10 @@ def check_tlm_data(project_root: Path) -> CheckResult:
     )
     return CheckResult(
         name="TLM data", ok=found,
-        fix_macos="Download swissTLM3D and set its path on the New Map screen",
-        fix_windows="Download swissTLM3D and set its path on the New Map screen",
+        category="data",
+        fix_macos="Download swissTLM3D, then set the path on the New Map screen",
+        fix_windows="Download swissTLM3D, then set the path on the New Map screen",
+        url="https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d",
     )
 
 
@@ -160,6 +171,7 @@ def check_config(project_root: Path) -> CheckResult:
     ) if config_dir.exists() else False
     return CheckResult(
         name="Map config", ok=found,
+        category="data",
         fix_macos="Use the New Map screen to create one",
         fix_windows="Use the New Map screen to create one",
     )
