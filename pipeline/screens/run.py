@@ -211,7 +211,7 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
 
         popup = tk.Toplevel(self)
         popup.title("New Map")
-        center_window(popup, 620, 330, parent=self.winfo_toplevel())
+        center_window(popup, 620, 280, parent=self.winfo_toplevel())
         popup.transient(self.winfo_toplevel())
         NewMapScreen(popup, on_map_created=lambda name: self._on_map_created(popup, name)).pack(
             fill="both", expand=True

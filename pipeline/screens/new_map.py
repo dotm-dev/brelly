@@ -100,6 +100,16 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         label.bind("<Button-1>", lambda _e: webbrowser.open(url))
         return label
 
+    def _bullet(self, parent, row: int, prefix: str, path: str, link_text: str, url: str) -> None:
+        """One intro line: prose, a monospace-bold folder path, then a
+        hyperlink — all inline so the path reads as a literal path rather
+        than blending into the sentence."""
+        line = tk.Frame(parent)
+        line.grid(row=row, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        tk.Label(line, text=f"•  {prefix}", font=("", 9), fg="#94a3b8").pack(side="left")
+        tk.Label(line, text=path, font=("Courier", 9, "bold"), fg="#c9d1e0").pack(side="left")
+        self._link(line, link_text, url).pack(side="left", padx=(6, 0))
+
     def _default_tlm_path(self) -> str:
         """Remembered TLM path if any, else auto-detect a .gpkg sitting
         directly in data/ (the download-once-share-everywhere convention)."""
@@ -117,17 +127,18 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             intro, text="A map is built from two free swisstopo datasets:", font=("", 10),
         ).grid(row=0, column=0, columnspan=2, sticky="w")
 
-        tk.Label(
-            intro, font=("", 9), fg="#94a3b8", wraplength=520, justify="left",
-            text="•  Elevation tiles (.tif) for your area — place them in data/<map name>/",
-        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
-        self._link(intro, "swissALTI3D ↗", DEM_URL).grid(row=1, column=1, sticky="w", padx=(6, 0), pady=(4, 0))
-
-        tk.Label(
-            intro, font=("", 9), fg="#94a3b8", wraplength=520, justify="left",
-            text="•  Landscape file (.gpkg) — one download for all maps, place it in data/",
-        ).grid(row=2, column=0, sticky="w", pady=(2, 0))
-        self._link(intro, "swissTLM3D ↗", TLM_URL).grid(row=2, column=1, sticky="w", padx=(6, 0), pady=(2, 0))
+        self._bullet(
+            intro, row=1,
+            prefix="Elevation tiles (.tif) for your area — place them in ",
+            path="data/<map name>/",
+            link_text="swissALTI3D ↗", url=DEM_URL,
+        )
+        self._bullet(
+            intro, row=2,
+            prefix="Landscape file (.gpkg), one download for all maps — place it in ",
+            path="data/",
+            link_text="swissTLM3D ↗", url=TLM_URL,
+        )
 
         ttk.Separator(self, orient="horizontal").pack(fill="x", padx=12, pady=(8, 4))
 
