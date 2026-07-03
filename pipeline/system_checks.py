@@ -5,6 +5,7 @@ setup-guide/steps.js."""
 from __future__ import annotations
 
 import json
+import os
 import platform
 import shutil
 import subprocess
@@ -22,14 +23,35 @@ class CheckResult:
     fix_windows: str = ""
 
 
+# Homebrew only updates PATH for shells that freshly source your profile —
+# a terminal already open when brew (or something brew installed) shows up
+# won't see /opt/homebrew/bin yet, even though it's really there. Fall back
+# to checking Homebrew's known bin dirs directly so System Check doesn't
+# report false negatives just because of terminal/PATH staleness.
+_HOMEBREW_BIN_DIRS = (Path("/opt/homebrew/bin"), Path("/usr/local/bin"))
+
+
+def which(cmd: str) -> str | None:
+    found = shutil.which(cmd)
+    if found:
+        return found
+    if platform.system() != "Darwin":
+        return None
+    for bin_dir in _HOMEBREW_BIN_DIRS:
+        candidate = bin_dir / cmd
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
 def check_command(cmd: str, name: str, fix_macos: str = "", fix_windows: str = "") -> CheckResult:
-    found = shutil.which(cmd) is not None
+    found = which(cmd) is not None
     return CheckResult(name=name, ok=found, fix_macos=fix_macos, fix_windows=fix_windows)
 
 
 def check_python312() -> CheckResult:
     for cmd in ("python3.12", "py"):
-        exe = shutil.which(cmd)
+        exe = which(cmd)
         if not exe:
             continue
         try:
@@ -47,7 +69,7 @@ def check_python312() -> CheckResult:
 
 
 def check_gdal_system() -> CheckResult:
-    found = shutil.which("gdal-config") is not None or platform.system() == "Windows"
+    found = which("gdal-config") is not None or platform.system() == "Windows"
     return CheckResult(
         name="GDAL system library",
         ok=found,
