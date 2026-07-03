@@ -3,10 +3,18 @@
 # One-command installer: checks each Brelly pipeline requirement, asks to
 # install what's missing, then launches the app. Run from anywhere:
 #   bash pipeline/setup.sh
+#   bash pipeline/setup.sh --verbose   # stream full installer output
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
+
+VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    -v|--verbose) VERBOSE=1 ;;
+  esac
+done
 
 # Homebrew's installer never edits shell profiles for you — it just prints
 # instructions to do so. Without that edit, every new shell (including a
@@ -36,10 +44,50 @@ step_failed() {
   exit 1
 }
 
+# Runs a non-interactive install command. In verbose mode, streams its
+# output live. Otherwise shows a spinner with elapsed time and only prints
+# the captured output if the command fails — install steps here (brew/npm/
+# pip) don't prompt for input, so it's safe to hide their noise.
+run_step() {
+  local desc="$1"; shift
+  if [ "$VERBOSE" -eq 1 ]; then
+    "$@"
+    return $?
+  fi
+
+  local log
+  log="$(mktemp)"
+  "$@" >"$log" 2>&1 &
+  local pid=$!
+  local spin='|/-\'
+  local i=0
+  local start=$SECONDS
+  while kill -0 "$pid" 2>/dev/null; do
+    i=$(( (i + 1) % 4 ))
+    printf "\r  %s... %s (%ds)" "$desc" "${spin:$i:1}" "$(( SECONDS - start ))"
+    sleep 0.2
+  done
+  wait "$pid"
+  local status=$?
+  local elapsed=$(( SECONDS - start ))
+  if [ "$status" -eq 0 ]; then
+    printf "\r  %s... done (%ds)\n" "$desc" "$elapsed"
+  else
+    printf "\r  %s... failed (%ds)\n" "$desc" "$elapsed"
+    cat "$log"
+  fi
+  rm -f "$log"
+  return "$status"
+}
+
 echo "Brelly pipeline setup"
 echo "======================"
 
 # 1. Homebrew
+# Not wrapped in run_step: this installer can prompt interactively (RETURN
+# to continue, sometimes a sudo password), so it must always stream live —
+# hiding it behind a spinner would make the script look hung while it waits
+# for input you can't see.
 if ! command -v brew >/dev/null 2>&1; then
   echo ""
   echo "✗ Homebrew not found."
@@ -67,7 +115,7 @@ if ! command -v python3.12 >/dev/null 2>&1; then
   echo "✗ Python 3.12 not found."
   echo "  Will run: brew install python@3.12"
   if confirm "Proceed?"; then
-    brew install python@3.12
+    run_step "Installing Python 3.12" brew install python@3.12 || step_failed "brew install python@3.12 failed."
   else
     step_failed "Python 3.12 is required."
   fi
@@ -81,7 +129,7 @@ if ! python3.12 -c "import tkinter" >/dev/null 2>&1; then
   echo "✗ tkinter not found."
   echo "  Will run: brew install python-tk@3.12"
   if confirm "Proceed?"; then
-    brew install python-tk@3.12
+    run_step "Installing tkinter" brew install python-tk@3.12 || step_failed "brew install python-tk@3.12 failed."
   else
     step_failed "tkinter is required to launch the pipeline app."
   fi
@@ -95,7 +143,7 @@ if ! command -v gdal-config >/dev/null 2>&1; then
   echo "✗ GDAL system library not found."
   echo "  Will run: brew install gdal"
   if confirm "Proceed?"; then
-    brew install gdal
+    run_step "Installing GDAL" brew install gdal || step_failed "brew install gdal failed."
   else
     step_failed "GDAL is required."
   fi
@@ -109,7 +157,7 @@ if ! command -v blender >/dev/null 2>&1; then
   echo "✗ Blender not found."
   echo "  Will run: brew install --cask blender"
   if confirm "Proceed?"; then
-    brew install --cask blender
+    run_step "Installing Blender" brew install --cask blender || step_failed "brew install --cask blender failed."
   else
     step_failed "Blender is required."
   fi
@@ -124,7 +172,7 @@ if ! command -v npm >/dev/null 2>&1; then
   echo "✗ Node.js not found."
   echo "  Will run: brew install node"
   if confirm "Proceed?"; then
-    brew install node
+    run_step "Installing Node.js" brew install node || step_failed "brew install node failed."
   else
     step_failed "Node.js is required to install gltfpack."
   fi
@@ -138,9 +186,7 @@ if ! command -v gltfpack >/dev/null 2>&1; then
   echo "✗ gltfpack not found."
   echo "  Will run: npm install -g gltfpack"
   if confirm "Proceed?"; then
-    if ! npm install -g gltfpack; then
-      step_failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
-    fi
+    run_step "Installing gltfpack" npm install -g gltfpack || step_failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
   else
     step_failed "gltfpack is required. Download manually from https://github.com/zeux/meshoptimizer/releases"
   fi
@@ -154,7 +200,7 @@ if [ ! -f ".venv/bin/python3" ]; then
   echo "✗ Virtual environment not found."
   echo "  Will run: python3.12 -m venv .venv"
   if confirm "Proceed?"; then
-    python3.12 -m venv .venv
+    run_step "Creating virtual environment" python3.12 -m venv .venv || step_failed "python3.12 -m venv .venv failed."
   else
     step_failed "A virtual environment is required."
   fi
@@ -168,7 +214,7 @@ if ! .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy
   echo "✗ Python dependencies not installed."
   echo "  Will run: .venv/bin/pip install -r pipeline/requirements.txt"
   if confirm "Proceed?"; then
-    .venv/bin/pip install -r pipeline/requirements.txt
+    run_step "Installing Python dependencies" .venv/bin/pip install -r pipeline/requirements.txt || step_failed ".venv/bin/pip install -r pipeline/requirements.txt failed."
   else
     step_failed "Python dependencies are required."
   fi

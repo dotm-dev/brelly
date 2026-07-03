@@ -2,6 +2,11 @@
 # One-command installer: checks each Brelly pipeline requirement, asks to
 # install what's missing, then launches the app. Run from anywhere:
 #   .\pipeline\setup.ps1
+#   .\pipeline\setup.ps1 -Verbose   # stream full installer output
+
+param(
+    [switch]$Verbose
+)
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
@@ -21,6 +26,47 @@ function Step-Failed {
     exit 1
 }
 
+# Runs a non-interactive install command. In verbose mode, streams its
+# output live. Otherwise shows a spinner with elapsed time and only prints
+# the captured output if the command fails. Every winget call also passes
+# --accept-*-agreements so a hidden license prompt can never make this look
+# like it's hung.
+function Run-Step {
+    param(
+        [string]$Description,
+        [string]$FilePath,
+        [string[]]$ArgumentList
+    )
+    if ($Verbose) {
+        & $FilePath @ArgumentList
+        return $LASTEXITCODE
+    }
+
+    $stdout = New-TemporaryFile
+    $stderr = New-TemporaryFile
+    $proc = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -NoNewWindow -PassThru `
+        -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $spin = '|', '/', '-', '\'
+    $i = 0
+    while (-not $proc.HasExited) {
+        $elapsed = [int]((Get-Date) - $proc.StartTime).TotalSeconds
+        Write-Host -NoNewline ("`r  {0}... {1} ({2}s)   " -f $Description, $spin[$i % 4], $elapsed)
+        $i++
+        Start-Sleep -Milliseconds 200
+    }
+    $proc.WaitForExit()
+    $elapsed = [int]((Get-Date) - $proc.StartTime).TotalSeconds
+    $exitCode = $proc.ExitCode
+    if ($exitCode -eq 0) {
+        Write-Host ("`r  {0}... done ({1}s)          " -f $Description, $elapsed)
+    } else {
+        Write-Host ("`r  {0}... failed ({1}s)          " -f $Description, $elapsed)
+        Get-Content $stdout, $stderr -ErrorAction SilentlyContinue | Write-Host
+    }
+    Remove-Item $stdout, $stderr -ErrorAction SilentlyContinue
+    return $exitCode
+}
+
 Write-Host "Brelly pipeline setup"
 Write-Host "======================"
 
@@ -32,7 +78,8 @@ if (-not $pythonOk) {
     Write-Host "X Python 3.12 not found." -ForegroundColor Red
     Write-Host "  Will run: winget install Python.Python.3.12"
     if (Confirm-Step "Proceed?") {
-        winget install Python.Python.3.12
+        $exit = Run-Step "Installing Python 3.12" "winget" @("install", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements")
+        if ($exit -ne 0) { Step-Failed "winget install Python.Python.3.12 failed." }
     } else {
         Step-Failed "Python 3.12 is required."
     }
@@ -47,7 +94,8 @@ if (-not $blenderOk) {
     Write-Host "X Blender not found." -ForegroundColor Red
     Write-Host "  Will run: winget install BlenderFoundation.Blender"
     if (Confirm-Step "Proceed?") {
-        winget install BlenderFoundation.Blender
+        $exit = Run-Step "Installing Blender" "winget" @("install", "BlenderFoundation.Blender", "--accept-package-agreements", "--accept-source-agreements")
+        if ($exit -ne 0) { Step-Failed "winget install BlenderFoundation.Blender failed." }
     } else {
         Step-Failed "Blender is required."
     }
@@ -64,7 +112,8 @@ if (-not $nodeOk) {
     Write-Host "X Node.js not found." -ForegroundColor Red
     Write-Host "  Will run: winget install OpenJS.NodeJS.LTS"
     if (Confirm-Step "Proceed?") {
-        winget install OpenJS.NodeJS.LTS
+        $exit = Run-Step "Installing Node.js" "winget" @("install", "OpenJS.NodeJS.LTS", "--accept-package-agreements", "--accept-source-agreements")
+        if ($exit -ne 0) { Step-Failed "winget install OpenJS.NodeJS.LTS failed." }
     } else {
         Step-Failed "Node.js is required to install gltfpack."
     }
@@ -80,10 +129,8 @@ if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
     Write-Host "X gltfpack not found." -ForegroundColor Red
     Write-Host "  Will run: npm install -g gltfpack"
     if (Confirm-Step "Proceed?") {
-        npm install -g gltfpack
-        if ($LASTEXITCODE -ne 0) {
-            Step-Failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
-        }
+        $exit = Run-Step "Installing gltfpack" "npm" @("install", "-g", "gltfpack")
+        if ($exit -ne 0) { Step-Failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases" }
     } else {
         Step-Failed "gltfpack is required. Download manually from https://github.com/zeux/meshoptimizer/releases"
     }
@@ -99,7 +146,8 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
     Write-Host "X Virtual environment not found." -ForegroundColor Red
     Write-Host "  Will run: py -3.12 -m venv .venv"
     if (Confirm-Step "Proceed?") {
-        py -3.12 -m venv .venv
+        $exit = Run-Step "Creating virtual environment" "py" @("-3.12", "-m", "venv", ".venv")
+        if ($exit -ne 0) { Step-Failed "py -3.12 -m venv .venv failed." }
     } else {
         Step-Failed "A virtual environment is required."
     }
@@ -120,7 +168,8 @@ if (-not $depsOk) {
     Write-Host "X Python dependencies not installed (this also covers GDAL bindings)." -ForegroundColor Red
     Write-Host "  Will run: .venv\Scripts\pip.exe install -r pipeline\requirements.txt"
     if (Confirm-Step "Proceed?") {
-        & .venv\Scripts\pip.exe install -r pipeline\requirements.txt
+        $exit = Run-Step "Installing Python dependencies" ".venv\Scripts\pip.exe" @("install", "-r", "pipeline\requirements.txt")
+        if ($exit -ne 0) { Step-Failed ".venv\Scripts\pip.exe install -r pipeline\requirements.txt failed." }
     } else {
         Step-Failed "Python dependencies are required. See pipeline\SETUP_WINDOWS.md if GDAL install fails."
     }
