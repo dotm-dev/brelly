@@ -158,9 +158,9 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._name_var = tk.StringVar()
         tk.Entry(form, textvariable=self._name_var, width=26).grid(row=0, column=1, sticky="w")
 
-        tk.Label(form, text="Elevation tiles:").grid(row=1, column=0, sticky="w", pady=4)
+        tk.Label(form, text="Elevation tiles:").grid(row=1, column=0, sticky="w", pady=(12, 4))
         mode_row = tk.Frame(form)
-        mode_row.grid(row=1, column=1, columnspan=2, sticky="w")
+        mode_row.grid(row=1, column=1, columnspan=2, sticky="w", pady=(12, 0))
         self._dem_mode = tk.StringVar(value="folder")
         tk.Radiobutton(
             mode_row, text="I already downloaded the tiles", variable=self._dem_mode,
@@ -182,7 +182,7 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         tk.Label(
             form, textvariable=self._dem_hint_var, fg="#94a3b8", font=("", 9),
             wraplength=420, justify="left",
-        ).grid(row=3, column=1, columnspan=2, sticky="w")
+        ).grid(row=3, column=1, columnspan=2, sticky="w", pady=(0, 8))
 
         tk.Label(form, text="Landscape file:").grid(row=4, column=0, sticky="w", pady=4)
         self._tlm_var = tk.StringVar(value=self._default_tlm_path())
