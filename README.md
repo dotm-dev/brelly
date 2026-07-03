@@ -1,6 +1,6 @@
 # Brelly
 
-> **New here?** If you just want to run the pipeline and see a map, skip to the [Quickstart guide](QUICKSTART.md) instead.
+> If you just want to run the pipeline and see a map, skip to the [Quickstart guide](QUICKSTART.md) instead.
 
 A game that places you on real Swiss terrain. This repo contains:
 
