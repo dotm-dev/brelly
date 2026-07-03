@@ -133,6 +133,7 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._tree.column("#0", width=220)
         self._tree.column("status", width=200)
         self._tree.tag_configure("ready", foreground="#6a9955")
+        self._tree.tag_configure("pending", foreground="#4a9eda")
         self._tree.tag_configure("not_ready", foreground="#f44747")
         self._tree.pack(fill="x", padx=8)
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._on_tree_select())
@@ -183,8 +184,12 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         for name, path in self._configs:
             result = map_data_ready(path, PROJECT_ROOT)
             self._ready[name] = result.ok
-            status = "✓ ready" if result.ok else f"✗ {result.detail}"
-            tag = "ready" if result.ok else "not_ready"
+            if result.ok and result.detail:
+                status, tag = f"✓ ready — {result.detail}", "pending"
+            elif result.ok:
+                status, tag = "✓ ready", "ready"
+            else:
+                status, tag = f"✗ {result.detail}", "not_ready"
             self._tree.insert("", "end", iid=name, text=name, values=(status,), tags=(tag,))
             if result.ok and first_ready is None:
                 first_ready = name

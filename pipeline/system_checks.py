@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -21,6 +22,17 @@ class CheckResult:
     detail: str = ""
     fix_macos: str = ""
     fix_windows: str = ""
+
+
+_SWISSTOPO_CSV_RE = re.compile(r"^ch\.swisstopo\..*\.csv$")
+
+
+def is_swisstopo_csv_name(filename: str) -> bool:
+    """pipeline/scripts/00_download.py only looks for files matching this
+    exact pattern — a CSV under a different name would be silently ignored
+    at pipeline-run time. Also used by map_data_ready() to recognize a
+    map whose DEM tiles haven't downloaded yet but will on the next run."""
+    return bool(_SWISSTOPO_CSV_RE.match(filename))
 
 
 # Homebrew only updates PATH for shells that freshly source your profile —
@@ -134,7 +146,13 @@ def map_data_ready(config_path: Path, project_root: Path) -> CheckResult:
     """Per-map data readiness: does this specific config's source_data.dem
     and source_data.tlm both resolve to an existing file? Used by the Run
     tab to flag individual maps, not a global "does any map have data"
-    check — with multiple maps that global version is nearly meaningless."""
+    check — with multiple maps that global version is nearly meaningless.
+
+    A missing DEM doesn't necessarily mean "broken" — the New Map screen's
+    swisstopo-CSV mode deliberately creates a config before any tile is
+    downloaded, staging a ch.swisstopo.*.csv next to where the VRT will
+    land. pipeline/scripts/00_download.py downloads it automatically on
+    the next pipeline run, so that case counts as ready, just pending."""
     name = config_path.stem
     try:
         data = json.loads(config_path.read_text())
@@ -143,13 +161,26 @@ def map_data_ready(config_path: Path, project_root: Path) -> CheckResult:
 
     source = data.get("source_data", {})
     missing = []
+    pending_download = False
     for key, label in (("dem", "DEM"), ("tlm", "TLM")):
         path_str = source.get(key)
-        if not path_str or not (project_root / path_str).exists():
+        if not path_str:
             missing.append(label)
+            continue
+        full_path = project_root / path_str
+        if full_path.exists():
+            continue
+        if key == "dem" and full_path.parent.exists() and any(
+            is_swisstopo_csv_name(p.name) for p in full_path.parent.glob("*.csv")
+        ):
+            pending_download = True
+            continue
+        missing.append(label)
 
     if missing:
         return CheckResult(name=name, ok=False, detail=f"Missing {' and '.join(missing)} data")
+    if pending_download:
+        return CheckResult(name=name, ok=True, detail="DEM tiles download automatically on run")
     return CheckResult(name=name, ok=True)
 
 

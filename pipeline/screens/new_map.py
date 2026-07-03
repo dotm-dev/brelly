@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from dem_config import derive_config_fields, derive_config_fields_from_csv
 from settings import load_settings, save_settings
+from system_checks import is_swisstopo_csv_name
 from utils.dem import build_vrt
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -31,18 +32,10 @@ DEM_URL = "https://www.swisstopo.admin.ch/en/height-model-swissalti3d"
 TLM_URL = "https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d"
 
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
-_SWISSTOPO_CSV_RE = re.compile(r"^ch\.swisstopo\..*\.csv$")
 
 
 def is_valid_map_name(name: str) -> bool:
     return bool(name) and bool(_NAME_RE.match(name))
-
-
-def is_swisstopo_csv_name(filename: str) -> bool:
-    """pipeline/scripts/00_download.py only looks for files matching this
-    exact pattern — a CSV under a different name would be silently ignored
-    at pipeline-run time, so this is checked up front instead."""
-    return bool(_SWISSTOPO_CSV_RE.match(filename))
 
 
 def build_new_map_config(name: str, display_name: str, tlm_path: str, fields: dict) -> dict:
