@@ -261,6 +261,6 @@ ok "Python dependencies"
 # 9. Launch the app
 echo ""
 echo "All requirements satisfied. Launching Brelly Pipeline app..."
-echo "Next time, skip these checks and launch the app directly with:"
-echo "  .venv/bin/python3 pipeline/app.py"
+echo "${C_CYAN}Next time, skip these checks and launch the app directly with:${C_RESET}"
+echo "${C_CYAN}  .venv/bin/python3 pipeline/app.py${C_RESET}"
 exec .venv/bin/python3 pipeline/app.py

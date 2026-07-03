@@ -196,6 +196,6 @@ Write-Host "OK Python dependencies" -ForegroundColor Green
 # 7. Launch the app
 Write-Host ""
 Write-Host "All requirements satisfied. Launching Brelly Pipeline app..."
-Write-Host "Next time, skip these checks and launch the app directly with:"
-Write-Host "  .venv\Scripts\python.exe pipeline\app.py"
+Write-Host "Next time, skip these checks and launch the app directly with:" -ForegroundColor Cyan
+Write-Host "  .venv\Scripts\python.exe pipeline\app.py" -ForegroundColor Cyan
 & .venv\Scripts\python.exe pipeline\app.py
