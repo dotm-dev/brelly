@@ -44,9 +44,29 @@ confirm() {
   esac
 }
 
+# Colored status lines. Only used when stdout is a real terminal, so piped
+# output/log files don't get raw escape codes.
+if [ -t 1 ]; then
+  C_GREEN=$'\033[0;32m'
+  C_RED=$'\033[0;31m'
+  C_RESET=$'\033[0m'
+else
+  C_GREEN=''
+  C_RED=''
+  C_RESET=''
+fi
+
+ok() {
+  echo "${C_GREEN}✓ $1${C_RESET}"
+}
+
+missing() {
+  echo "${C_RED}✗ $1${C_RESET}"
+}
+
 step_failed() {
   echo ""
-  echo "✗ $1"
+  missing "$1"
   echo "  Run this manually, then re-run: bash pipeline/setup.sh"
   exit 1
 }
@@ -100,7 +120,7 @@ echo "======================"
 # your admin password when needed.
 if ! command -v brew >/dev/null 2>&1; then
   echo ""
-  echo "✗ Homebrew not found."
+  missing "Homebrew not found."
   echo "  Will run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
   if confirm "Proceed?"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -117,12 +137,12 @@ if ! command -v brew >/dev/null 2>&1; then
   fi
 fi
 command -v brew >/dev/null 2>&1 || step_failed "Homebrew still not found after install attempt."
-echo "✓ Homebrew"
+ok "Homebrew"
 
 # 2. Python 3.12
 if ! command -v python3.12 >/dev/null 2>&1; then
   echo ""
-  echo "✗ Python 3.12 not found."
+  missing "Python 3.12 not found."
   echo "  Will run: brew install python@3.12"
   if confirm "Proceed?"; then
     run_step "Installing Python 3.12" brew install python@3.12 || step_failed "brew install python@3.12 failed."
@@ -131,12 +151,12 @@ if ! command -v python3.12 >/dev/null 2>&1; then
   fi
 fi
 command -v python3.12 >/dev/null 2>&1 || step_failed "Python 3.12 still not found after install attempt."
-echo "✓ Python 3.12"
+ok "Python 3.12"
 
 # 2b. tkinter (app.py's GUI toolkit; Homebrew's python@3.12 doesn't bundle Tk)
 if ! python3.12 -c "import tkinter" >/dev/null 2>&1; then
   echo ""
-  echo "✗ tkinter not found."
+  missing "tkinter not found."
   echo "  Will run: brew install python-tk@3.12"
   if confirm "Proceed?"; then
     run_step "Installing tkinter" brew install python-tk@3.12 || step_failed "brew install python-tk@3.12 failed."
@@ -145,12 +165,12 @@ if ! python3.12 -c "import tkinter" >/dev/null 2>&1; then
   fi
 fi
 python3.12 -c "import tkinter" >/dev/null 2>&1 || step_failed "tkinter still not importable after install attempt."
-echo "✓ tkinter"
+ok "tkinter"
 
 # 3. GDAL system library
 if ! command -v gdal-config >/dev/null 2>&1; then
   echo ""
-  echo "✗ GDAL system library not found."
+  missing "GDAL system library not found."
   echo "  Will run: brew install gdal"
   if confirm "Proceed?"; then
     run_step "Installing GDAL" brew install gdal || step_failed "brew install gdal failed."
@@ -159,12 +179,12 @@ if ! command -v gdal-config >/dev/null 2>&1; then
   fi
 fi
 command -v gdal-config >/dev/null 2>&1 || step_failed "GDAL still not found after install attempt."
-echo "✓ GDAL system library"
+ok "GDAL system library"
 
 # 4. Blender
 if ! command -v blender >/dev/null 2>&1; then
   echo ""
-  echo "✗ Blender not found."
+  missing "Blender not found."
   echo "  Will run: brew install --cask blender"
   if confirm "Proceed?"; then
     run_step "Installing Blender" brew install --cask blender || step_failed "brew install --cask blender failed."
@@ -173,13 +193,13 @@ if ! command -v blender >/dev/null 2>&1; then
   fi
 fi
 command -v blender >/dev/null 2>&1 || step_failed "Blender still not found after install attempt."
-echo "✓ Blender"
+ok "Blender"
 
 # 5. Node.js (needed to install gltfpack, which ships as an npm package —
 # there's no Homebrew formula for it)
 if ! command -v npm >/dev/null 2>&1; then
   echo ""
-  echo "✗ Node.js not found."
+  missing "Node.js not found."
   echo "  Will run: brew install node"
   if confirm "Proceed?"; then
     run_step "Installing Node.js" brew install node || step_failed "brew install node failed."
@@ -188,12 +208,12 @@ if ! command -v npm >/dev/null 2>&1; then
   fi
 fi
 command -v npm >/dev/null 2>&1 || step_failed "Node.js still not found after install attempt."
-echo "✓ Node.js"
+ok "Node.js"
 
 # 6. gltfpack (published on npm with prebuilt binaries; no Homebrew formula)
 if ! command -v gltfpack >/dev/null 2>&1; then
   echo ""
-  echo "✗ gltfpack not found."
+  missing "gltfpack not found."
   echo "  Will run: npm install -g gltfpack"
   if confirm "Proceed?"; then
     run_step "Installing gltfpack" npm install -g gltfpack || step_failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
@@ -202,12 +222,12 @@ if ! command -v gltfpack >/dev/null 2>&1; then
   fi
 fi
 command -v gltfpack >/dev/null 2>&1 || step_failed "gltfpack still not found after install attempt."
-echo "✓ gltfpack"
+ok "gltfpack"
 
 # 7. Virtual environment
 if [ ! -f ".venv/bin/python3" ]; then
   echo ""
-  echo "✗ Virtual environment not found."
+  missing "Virtual environment not found."
   echo "  Will run: python3.12 -m venv .venv"
   if confirm "Proceed?"; then
     run_step "Creating virtual environment" python3.12 -m venv .venv || step_failed "python3.12 -m venv .venv failed."
@@ -216,12 +236,12 @@ if [ ! -f ".venv/bin/python3" ]; then
   fi
 fi
 [ -f ".venv/bin/python3" ] || step_failed "Virtual environment still missing after creation attempt."
-echo "✓ Virtual environment"
+ok "Virtual environment"
 
 # 8. Python dependencies
 if ! .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1; then
   echo ""
-  echo "✗ Python dependencies not installed."
+  missing "Python dependencies not installed."
   echo "  Will run: .venv/bin/pip install -r pipeline/requirements.txt"
   if confirm "Proceed?"; then
     run_step "Installing Python dependencies" .venv/bin/pip install -r pipeline/requirements.txt || step_failed ".venv/bin/pip install -r pipeline/requirements.txt failed."
@@ -230,7 +250,7 @@ if ! .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy
   fi
 fi
 .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1 || step_failed "Dependencies still not importable after install attempt."
-echo "✓ Python dependencies"
+ok "Python dependencies"
 
 # 9. Launch the app
 echo ""

@@ -98,7 +98,7 @@ if (-not $pythonOk) {
     }
 }
 try { py -3.12 --version | Out-Null } catch { Step-Failed "Python 3.12 still not found after install attempt." }
-Write-Host "OK Python 3.12"
+Write-Host "OK Python 3.12" -ForegroundColor Green
 
 # 2. Blender
 $blenderOk = [bool](Get-Command blender -ErrorAction SilentlyContinue)
@@ -116,7 +116,7 @@ if (-not $blenderOk) {
 if (-not (Get-Command blender -ErrorAction SilentlyContinue)) {
     Step-Failed "Blender still not found after install attempt."
 }
-Write-Host "OK Blender"
+Write-Host "OK Blender" -ForegroundColor Green
 
 # 3. Node.js (needed to install gltfpack, which ships as an npm package)
 $nodeOk = [bool](Get-Command npm -ErrorAction SilentlyContinue)
@@ -134,7 +134,7 @@ if (-not $nodeOk) {
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     Step-Failed "Node.js still not found after install attempt."
 }
-Write-Host "OK Node.js"
+Write-Host "OK Node.js" -ForegroundColor Green
 
 # 4. gltfpack (published on npm with prebuilt binaries)
 if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
@@ -151,7 +151,7 @@ if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
 if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
     Step-Failed "gltfpack still not found after install attempt."
 }
-Write-Host "OK gltfpack"
+Write-Host "OK gltfpack" -ForegroundColor Green
 
 # 5. Virtual environment
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
@@ -168,7 +168,7 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
     Step-Failed "Virtual environment still missing after creation attempt."
 }
-Write-Host "OK Virtual environment"
+Write-Host "OK Virtual environment" -ForegroundColor Green
 
 # 6. Python dependencies (also verifies GDAL — see note above)
 $depsOk = $false
@@ -191,7 +191,7 @@ if (-not $depsOk) {
 if ($LASTEXITCODE -ne 0) {
     Step-Failed "Dependencies still not importable after install attempt. See pipeline\SETUP_WINDOWS.md for GDAL/OSGeo4W troubleshooting."
 }
-Write-Host "OK Python dependencies"
+Write-Host "OK Python dependencies" -ForegroundColor Green
 
 # 7. Launch the app
 Write-Host ""
