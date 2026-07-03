@@ -42,7 +42,7 @@ Place DEM tiles + a VRT index and the TLM GeoPackage under `data/<map_name>/`.
 
 ### 3. Create a map
 
-Use the **New Map** tab in the app: give it a name, point it at your
+Click **+ New Map** on the Run tab: give it a name, point it at your
 downloaded `.tif` DEM tiles, and (once) your swissTLM3D GeoPackage. It
 derives the map's centre, radius, and base elevation from the DEM extent
 automatically and writes the config for you.

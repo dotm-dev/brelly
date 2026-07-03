@@ -28,9 +28,9 @@ maps/my_area/
 
 ## Configuration
 
-The easiest way to create a config is the **New Map** tab in
-`python pipeline/app.py` — see the root [`README.md`](../README.md) quick
-start. To create or edit one by hand, base it on
+The easiest way to create a config is the **+ New Map** button on the Run
+tab in `python pipeline/app.py` — see the root [`README.md`](../README.md)
+quick start. To create or edit one by hand, base it on
 [`pipeline/config/example.json`](config/example.json):
 
 ```json
