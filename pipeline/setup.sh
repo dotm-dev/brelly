@@ -91,16 +91,19 @@ echo "Brelly pipeline setup"
 echo "======================"
 
 # 1. Homebrew
-# Not wrapped in run_step: even with NONINTERACTIVE=1 below (which skips the
-# installer's own "Press RETURN to continue" prompt), it may still ask for
-# your admin password to set up /opt/homebrew — a real macOS password
-# prompt that must stay live and can't be (and shouldn't be) automated away.
+# Not wrapped in run_step, and deliberately NOT run with NONINTERACTIVE=1:
+# that env var doesn't just skip the installer's "Press RETURN to continue"
+# prompt, it also switches its sudo check to `sudo -n` (non-interactive,
+# no password prompt allowed) — which fails outright if you don't already
+# have a cached sudo credential, even on a genuine admin account. Left as
+# the installer's normal interactive flow so it can actually prompt for
+# your admin password when needed.
 if ! command -v brew >/dev/null 2>&1; then
   echo ""
   echo "✗ Homebrew not found."
   echo "  Will run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
   if confirm "Proceed?"; then
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     # The installer doesn't update PATH for the current shell, only future
     # ones (via shell profile edits it prints instructions for) — so pick up
     # the freshly installed brew here, checking both install locations.
