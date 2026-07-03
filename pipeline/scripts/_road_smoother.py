@@ -8,9 +8,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 # ── Tuning constants ──────────────────────────────────────────────────────────
-LAPLACIAN_ITERS  = 10      # number of smoothing passes
-LAPLACIAN_ALPHA  = 0.35    # strength per pass (0 = no smoothing, 1 = full average)
-CLAMP_DELTA      = 4.0     # max metres smoothed Y may deviate from raw terrain
+LAPLACIAN_ITERS  = 80      # number of smoothing passes
+LAPLACIAN_ALPHA  = 0.5     # strength per pass (0 = no smoothing, 1 = full average)
+CLAMP_DELTA      = 0.5     # max metres smoothed Y may deviate from raw terrain
 BRIDGE_THRESHOLD = 3.0     # road > terrain by this many metres → bridge
 TUNNEL_THRESHOLD = 1.0     # road < terrain by this many metres → tunnel
 SNAP_PRECISION   = 0.5     # metres: rounding tolerance for intersection detection
@@ -105,11 +105,16 @@ def smooth_roads(roads: list, config, dem_ds) -> tuple[list[dict], list]:
         locked[0]  = True
         locked[-1] = True
 
-        # Sample raw terrain elevation for clamping.
+        # Sample raw terrain elevation for clamping and as a smooth starting point.
         terrain_abs = [
             _sample_dem(dem_ds, e, n, elev)
             for e, n, elev in coords
         ]
+
+        # Seed unlocked nodes from the DEM (already smooth) rather than noisy TLM Z.
+        for ni in range(n_pts):
+            if not locked[ni]:
+                y[ni] = terrain_abs[ni]
 
         # ── Step 3: Constrained Laplacian smoothing (Y only) ─────────────────
         for _ in range(LAPLACIAN_ITERS):

@@ -9,7 +9,7 @@ raster at any given point.
 # Metres to lift road surfaces above the DEM surface at each edge vertex.
 # Small value is fine because we now sample the DEM per-vertex (not per-centerline),
 # so roads follow the terrain cross-section and only need a thin z-fighting buffer.
-ROAD_LIFT = 0.5
+ROAD_LIFT = 0.8
 
 # Max miter-joint scale before clamping (avoids needle spikes on sharp corners).
 MAX_ROAD_MITER = 3.0

@@ -196,9 +196,23 @@ def _build_road_meshes_from_splines(spline_dicts: list[dict]) -> dict[str, tuple
                 node_lift[seg["startIdx"]] = BRIDGE_LIFT
                 node_lift[seg["endIdx"]]   = BRIDGE_LIFT
 
+        # Post-resample Y smoothing: resampler does linear interpolation between
+        # original TLM nodes, leaving slope kinks at every source-node boundary.
+        # A few Laplacian passes on the resampled Y values eliminate those kinks.
+        _POST_ITERS  = 20
+        _POST_ALPHA  = 0.5
+        locked = [nd["isLocked"] for nd in nodes]
+        ys = [nd["y"] for nd in nodes]
+        for _ in range(_POST_ITERS):
+            new_ys = ys[:]
+            for i in range(1, n_pts - 1):
+                if not locked[i]:
+                    new_ys[i] = ys[i] + _POST_ALPHA * (ys[i-1] - 2*ys[i] + ys[i+1])
+            ys = new_ys
+
         # _miter_perp expects (East, elev, North) — index 0=East, 2=North.
         # Spline nodes use glTF convention where Z=−North, so negate Z for miter calc.
-        pts_gltf   = [(nd["x"], nd["y"] + node_lift[i] + ROAD_LIFT, nd["z"]) for i, nd in enumerate(nodes)]
+        pts_gltf   = [(nd["x"], ys[i] + node_lift[i] + ROAD_LIFT, nd["z"]) for i, nd in enumerate(nodes)]
         pts_miter  = [(nd["x"], nd["y"],                -nd["z"]) for nd in nodes]
 
         left_pts:  list[tuple[float, float, float]] = []
