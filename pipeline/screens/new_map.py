@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
@@ -21,6 +22,13 @@ PIPELINE_DIR = Path(__file__).parent.parent
 CONFIG_DIR = PIPELINE_DIR / "config"
 DATA_DIR = PROJECT_ROOT / "data"
 SETTINGS_PATH = CONFIG_DIR / ".settings.json"
+
+# data/ is where every map's downloaded source files live (see the DEM tiles
+# folder and TLM GeoPackage fields below). It's gitignored — each machine
+# builds up its own copy from swisstopo, nothing here is meant to be shared
+# via the repo.
+DEM_URL = "https://www.swisstopo.admin.ch/en/height-model-swissalti3d"
+TLM_URL = "https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d"
 
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
@@ -79,9 +87,20 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._on_map_created = on_map_created
         self._dem_tiles_dir: Path | None = None
         self._settings = load_settings(SETTINGS_PATH)
+        # Created eagerly (not just on map creation) so it exists as an
+        # obvious drop target in Finder/Explorer before the user even opens
+        # a file picker — it's gitignored, so nothing exists here on a
+        # fresh checkout otherwise.
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         self._build_ui()
 
     def _build_ui(self) -> None:
+        tk.Label(
+            self,
+            text=f"Downloaded files go under {DATA_DIR} (gitignored — each machine keeps its own copy).",
+            fg="#94a3b8", font=("", 9),
+        ).pack(anchor="w", padx=12, pady=(10, 0))
+
         form = tk.Frame(self)
         form.pack(fill="x", padx=12, pady=12)
 
@@ -93,11 +112,25 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._dem_dir_var = tk.StringVar()
         tk.Entry(form, textvariable=self._dem_dir_var, width=40, state="readonly").grid(row=1, column=1, sticky="w")
         tk.Button(form, text="Browse…", command=self._pick_dem_dir).grid(row=1, column=2, padx=6)
+        tk.Label(
+            form, text="Elevation tiles (.tif) — swissALTI3D",
+            fg="#94a3b8", font=("", 9),
+        ).grid(row=1, column=3, sticky="w", padx=(6, 0))
+        tk.Button(
+            form, text="Open ↗", font=("", 9), command=lambda: webbrowser.open(DEM_URL),
+        ).grid(row=1, column=4, padx=(4, 0))
 
         tk.Label(form, text="TLM GeoPackage:").grid(row=2, column=0, sticky="w", pady=4)
         self._tlm_var = tk.StringVar(value=self._settings.get("tlm_path", ""))
         tk.Entry(form, textvariable=self._tlm_var, width=40).grid(row=2, column=1, sticky="w")
         tk.Button(form, text="Browse…", command=self._pick_tlm_file).grid(row=2, column=2, padx=6)
+        tk.Label(
+            form, text="Roads/buildings/vegetation (.gpkg) — swissTLM3D",
+            fg="#94a3b8", font=("", 9),
+        ).grid(row=2, column=3, sticky="w", padx=(6, 0))
+        tk.Button(
+            form, text="Open ↗", font=("", 9), command=lambda: webbrowser.open(TLM_URL),
+        ).grid(row=2, column=4, padx=(4, 0))
 
         self._status_var = tk.StringVar()
         tk.Label(self, textvariable=self._status_var, fg="#f44747").pack(anchor="w", padx=12)
@@ -106,14 +139,17 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
                   bg="#2d6a2d", activebackground="#3a8a3a").pack(anchor="w", padx=12, pady=8)
 
     def _pick_dem_dir(self) -> None:
-        chosen = filedialog.askdirectory(title="Select folder containing DEM .tif tiles")
+        chosen = filedialog.askdirectory(
+            title="Select folder containing DEM .tif tiles", initialdir=str(DATA_DIR),
+        )
         if chosen:
             self._dem_tiles_dir = Path(chosen)
             self._dem_dir_var.set(chosen)
 
     def _pick_tlm_file(self) -> None:
         chosen = filedialog.askopenfilename(
-            title="Select swissTLM3D GeoPackage", filetypes=[("GeoPackage", "*.gpkg")]
+            title="Select swissTLM3D GeoPackage", filetypes=[("GeoPackage", "*.gpkg")],
+            initialdir=str(DATA_DIR),
         )
         if chosen:
             self._tlm_var.set(chosen)
