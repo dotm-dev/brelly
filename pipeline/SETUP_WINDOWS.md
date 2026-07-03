@@ -83,18 +83,32 @@ Verify:
 python -c "import pyproj, shapely, numpy; print('OK')"
 ```
 
-## 5. Install gltfpack (optional)
+## 5. Install Node.js
+
+Needed to install `gltfpack` (step 6):
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+node --version
+```
+
+## 6. Install gltfpack (optional)
 
 Compresses `.glb` output. Skip if you don't need it.
+
+Published on npm with prebuilt binaries:
+
+```powershell
+npm install -g gltfpack
+gltfpack --version
+```
+
+If that fails, download the binary directly instead:
 
 1. Download `gltfpack-win64.exe` from https://github.com/zeux/meshoptimizer/releases
 2. Rename to `gltfpack.exe`, place in e.g. `C:\tools\`, add that folder to PATH (`Win + R` → `sysdm.cpl` → Advanced → Environment Variables → User `Path` → Edit → New)
 
-```powershell
-gltfpack --version
-```
-
-## 6. Download source data
+## 7. Download source data
 
 Both datasets are free from swisstopo. Create a folder per map area inside `data\` (replace `my_area` with your chosen name):
 
@@ -122,7 +136,7 @@ Brelly\
         └── swissTLM3D.gpkg
 ```
 
-## 7. Create a map config
+## 8. Create a map config
 
 ```powershell
 copy pipeline\config\example.json pipeline\config\my_area.json
@@ -144,7 +158,7 @@ Edit at minimum:
 
 Use forward slashes or escaped backslashes in JSON paths. Find LV95 coordinates: https://map.geo.admin.ch — right-click any point.
 
-## 8. Run the pipeline
+## 9. Run the pipeline
 
 ```powershell
 python pipeline\run_pipeline.py pipeline\config\my_area.json
@@ -152,7 +166,7 @@ python pipeline\run_pipeline.py pipeline\config\my_area.json
 
 Output lands in `maps\my_area\`.
 
-## 9. Run the tests
+## 10. Run the tests
 
 ```powershell
 pytest pipeline\tests\
@@ -169,5 +183,5 @@ pytest pipeline\tests\
 | `from osgeo import gdal` fails after wheel install | Ensure you installed `win_amd64` and Python is 64-bit |
 | Scripts disabled in PowerShell | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
 | `WARNING: TLM source not found` | Check `source_data.tlm` path in config — relative to project root, forward slashes |
-| `WARNING: gltfpack not found` | Optional — install via step 5 or ignore |
+| `WARNING: gltfpack not found` | Optional — install via step 6 or ignore |
 | `FAILED: scripts/XX_*.py exited with code N` | Read the lines above the error |

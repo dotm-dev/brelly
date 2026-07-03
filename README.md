@@ -12,11 +12,16 @@ A game that places you on real Swiss terrain. This repo contains:
 
 ### 1. Install dependencies
 
-Run the installer for your OS — it checks each requirement, asks before
-installing anything missing, and launches the app when done:
+Run the installer for your OS — it checks each requirement, installs
+whatever's missing, and launches the app when done:
 
 - **macOS:** `bash pipeline/setup.sh`
 - **Windows:** `.\pipeline\setup.ps1`
+
+Both install without prompting by default. Flags:
+
+- `-i` / `-Interactive` — confirm before each install
+- `-v` / `-Verbose` — stream full installer output instead of a quiet spinner
 
 Prefer to do it by hand, or just want a status check without installing
 anything? Run `python pipeline/app.py` directly — its **System Check** tab

@@ -40,14 +40,32 @@ brew install python@3.12
 python3.12 --version   # Python 3.12.x
 ```
 
-## 3. Install GDAL
+## 3. Install tkinter
+
+Homebrew's `python@3.12` formula doesn't bundle Tk, but `pipeline/app.py`'s GUI needs it:
+
+```bash
+brew install python-tk@3.12
+python3.12 -c "import tkinter; print('OK')"
+```
+
+## 4. Install GDAL
 
 ```bash
 brew install gdal
 gdal-config --version  # 3.x.x
 ```
 
-## 4. Create a virtual environment
+## 5. Install Node.js
+
+Needed to install `gltfpack` (step 8) — no Homebrew formula exists for it, but it's published on npm.
+
+```bash
+brew install node
+node --version
+```
+
+## 6. Create a virtual environment
 
 ```bash
 cd /path/to/Brelly
@@ -57,7 +75,7 @@ source .venv/bin/activate
 
 Reactivate in a new terminal: `source .venv/bin/activate`
 
-## 5. Install Python dependencies
+## 7. Install Python dependencies
 
 ```bash
 pip install -r pipeline/requirements.txt
@@ -76,11 +94,18 @@ python -c "from osgeo import gdal; print(gdal.__version__)"
 python -c "import pyproj, shapely, numpy; print('OK')"
 ```
 
-## 6. Install gltfpack (optional)
+## 8. Install gltfpack (optional)
 
 Compresses `.glb` output. Skip if you don't need it.
 
-No Homebrew formula exists — install the binary directly:
+Published on npm with prebuilt binaries:
+
+```bash
+npm install -g gltfpack
+gltfpack --version
+```
+
+If that fails, download the binary directly instead:
 
 1. Go to https://github.com/zeux/meshoptimizer/releases
 2. Download `gltfpack-macos` from the latest release
@@ -91,7 +116,7 @@ sudo chmod +x /usr/local/bin/gltfpack
 sudo xattr -d com.apple.quarantine /usr/local/bin/gltfpack
 ```
 
-## 7. Download source data
+## 9. Download source data
 
 Both datasets are free from swisstopo. Create a folder per map area inside `data/` (replace `my_area` with your chosen name):
 
@@ -118,7 +143,7 @@ Brelly/
         └── swissTLM3D.gpkg
 ```
 
-## 8. Create a map config
+## 10. Create a map config
 
 ```bash
 cp pipeline/config/example.json pipeline/config/my_area.json
@@ -140,7 +165,7 @@ Edit at minimum:
 
 Find LV95 coordinates: https://map.geo.admin.ch — right-click any point.
 
-## 9. Run the pipeline
+## 11. Run the pipeline
 
 ```bash
 python pipeline/run_pipeline.py pipeline/config/my_area.json
@@ -148,7 +173,7 @@ python pipeline/run_pipeline.py pipeline/config/my_area.json
 
 Output lands in `maps/my_area/`.
 
-## 10. Run the tests
+## 12. Run the tests
 
 ```bash
 pytest pipeline/tests/
@@ -163,6 +188,7 @@ pytest pipeline/tests/
 | `command not found: pip` | `python3.12 -m pip install -r pipeline/requirements.txt` |
 | `FileNotFoundError: gdal-config` | `brew install gdal`, then retry pip |
 | `gdal` fails on Python 3.14+ | Use Python 3.12 (step 2) |
+| `ModuleNotFoundError: No module named 'tkinter'` | `brew install python-tk@3.12` (step 3) |
 | `WARNING: TLM source not found` | Check `source_data.tlm` path in config — relative to project root |
-| `WARNING: gltfpack not found` | Optional — install via step 6 or ignore |
+| `WARNING: gltfpack not found` | Optional — install via step 8 or ignore |
 | `FAILED: scripts/XX_*.py exited with code N` | Read the lines above the error |
