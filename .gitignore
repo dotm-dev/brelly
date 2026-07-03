@@ -44,3 +44,8 @@ __pycache__/
 # Superpowers
 .superpowers/
 docs/superpowers/
+
+# Local docs/plans (not for the repo)
+docs/
+*.audit.md
+[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9]-audit.md
