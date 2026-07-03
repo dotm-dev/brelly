@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from unittest.mock import patch
 import pytest
 
-from system_checks import CheckResult, run_all_checks, check_command, map_data_ready
+from system_checks import CheckResult, run_all_checks, check_command, map_data_ready, is_swisstopo_csv_name
 
 
 def test_check_command_found():
@@ -130,3 +130,12 @@ def test_run_single_check_unknown_name_raises_keyerror():
     from system_checks import run_single_check
     with pytest.raises(KeyError):
         run_single_check("Nonexistent Check", project_root=Path("."))
+
+
+def test_is_swisstopo_csv_name_accepts_real_pattern():
+    assert is_swisstopo_csv_name("ch.swisstopo.swissalti3d-Dtpwvagz.csv") is True
+
+
+def test_is_swisstopo_csv_name_rejects_other_names():
+    assert is_swisstopo_csv_name("tiles.csv") is False
+    assert is_swisstopo_csv_name("ch.swisstopo.swissalti3d-Dtpwvagz.txt") is False

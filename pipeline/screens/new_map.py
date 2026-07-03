@@ -15,7 +15,6 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from dem_config import derive_config_fields, derive_config_fields_from_csv
 from settings import load_settings, save_settings
-from system_checks import is_swisstopo_csv_name
 from utils.dem import build_vrt
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -246,13 +245,6 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         if mode == "csv" and self._dem_csv_path is None:
             self._status_var.set("Select a swisstopo download-links CSV.")
             return
-        if mode == "csv" and not is_swisstopo_csv_name(self._dem_csv_path.name):
-            self._status_var.set(
-                f"'{self._dem_csv_path.name}' doesn't look like a swisstopo CSV "
-                "(expected a name like ch.swisstopo.swissalti3d-XXXXXXXX.csv) — "
-                "the pipeline's download step won't find it under a different name."
-            )
-            return
         if not tlm_path:
             self._status_var.set("Select a swissTLM3D GeoPackage.")
             return
@@ -339,7 +331,14 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             self._fail(f"Failed to read tile grid from CSV: {exc}", map_data_dir, cleanup)
             return None
 
-        dest = map_data_dir / self._dem_csv_path.name
+        # Always land under a name matching what 00_download.py's glob
+        # expects (ch.swisstopo.*.csv), regardless of what the browser
+        # actually saved it as. Safari in particular renders swisstopo's
+        # CSV inline instead of downloading it, so "Save As" names the file
+        # after the page (e.g. "tif.csv"), not swisstopo's own filename —
+        # the CSV's *content* (real tile coordinates, checked above) is
+        # what actually matters, not what it happened to be called.
+        dest = map_data_dir / f"ch.swisstopo.swissalti3d-{map_data_dir.name}.csv"
         # The CSV may already sit exactly where we'd copy it — e.g. the map
         # name collides case-insensitively with an existing data/ folder
         # (macOS's default filesystem), or the user just points at a file
