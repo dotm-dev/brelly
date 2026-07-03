@@ -91,16 +91,16 @@ echo "Brelly pipeline setup"
 echo "======================"
 
 # 1. Homebrew
-# Not wrapped in run_step: this installer can prompt interactively (RETURN
-# to continue, sometimes a sudo password), so it must always stream live —
-# hiding it behind a spinner would make the script look hung while it waits
-# for input you can't see.
+# Not wrapped in run_step: even with NONINTERACTIVE=1 below (which skips the
+# installer's own "Press RETURN to continue" prompt), it may still ask for
+# your admin password to set up /opt/homebrew — a real macOS password
+# prompt that must stay live and can't be (and shouldn't be) automated away.
 if ! command -v brew >/dev/null 2>&1; then
   echo ""
   echo "✗ Homebrew not found."
   echo "  Will run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
   if confirm "Proceed?"; then
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     # The installer doesn't update PATH for the current shell, only future
     # ones (via shell profile edits it prints instructions for) — so pick up
     # the freshly installed brew here, checking both install locations.

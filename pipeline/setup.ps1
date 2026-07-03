@@ -5,6 +5,13 @@
 #   .\pipeline\setup.ps1
 #   .\pipeline\setup.ps1 -Verbose        # stream full installer output
 #   .\pipeline\setup.ps1 -Interactive    # confirm before each install
+#
+# Note: winget installs below pass --silent plus --accept-*-agreements to
+# avoid GUI installer prompts and license confirmations. The one thing that
+# can't be scripted away is a Windows UAC elevation prompt, if a package
+# requires admin rights — that's the OS asking, not this script, and must
+# stay live. Running this script from an already-elevated (Run as
+# Administrator) terminal avoids per-package UAC prompts entirely.
 
 param(
     [switch]$Verbose,
@@ -84,7 +91,7 @@ if (-not $pythonOk) {
     Write-Host "X Python 3.12 not found." -ForegroundColor Red
     Write-Host "  Will run: winget install Python.Python.3.12"
     if (Confirm-Step "Proceed?") {
-        $exit = Run-Step "Installing Python 3.12" "winget" @("install", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements")
+        $exit = Run-Step "Installing Python 3.12" "winget" @("install", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements", "--silent")
         if ($exit -ne 0) { Step-Failed "winget install Python.Python.3.12 failed." }
     } else {
         Step-Failed "Python 3.12 is required."
@@ -100,7 +107,7 @@ if (-not $blenderOk) {
     Write-Host "X Blender not found." -ForegroundColor Red
     Write-Host "  Will run: winget install BlenderFoundation.Blender"
     if (Confirm-Step "Proceed?") {
-        $exit = Run-Step "Installing Blender" "winget" @("install", "BlenderFoundation.Blender", "--accept-package-agreements", "--accept-source-agreements")
+        $exit = Run-Step "Installing Blender" "winget" @("install", "BlenderFoundation.Blender", "--accept-package-agreements", "--accept-source-agreements", "--silent")
         if ($exit -ne 0) { Step-Failed "winget install BlenderFoundation.Blender failed." }
     } else {
         Step-Failed "Blender is required."
@@ -118,7 +125,7 @@ if (-not $nodeOk) {
     Write-Host "X Node.js not found." -ForegroundColor Red
     Write-Host "  Will run: winget install OpenJS.NodeJS.LTS"
     if (Confirm-Step "Proceed?") {
-        $exit = Run-Step "Installing Node.js" "winget" @("install", "OpenJS.NodeJS.LTS", "--accept-package-agreements", "--accept-source-agreements")
+        $exit = Run-Step "Installing Node.js" "winget" @("install", "OpenJS.NodeJS.LTS", "--accept-package-agreements", "--accept-source-agreements", "--silent")
         if ($exit -ne 0) { Step-Failed "winget install OpenJS.NodeJS.LTS failed." }
     } else {
         Step-Failed "Node.js is required to install gltfpack."
