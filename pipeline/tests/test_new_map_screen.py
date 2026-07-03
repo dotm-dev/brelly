@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from screens.new_map import is_valid_map_name, build_new_map_config
+from screens.new_map import is_valid_map_name, build_new_map_config, is_swisstopo_csv_name
 
 
 def test_is_valid_map_name_accepts_alnum_dash_underscore():
@@ -25,13 +25,7 @@ def test_build_new_map_config_matches_expected_schema():
         "center_e": 2683005.0, "center_n": 1247505.0,
         "radius_m": 500.0, "base_elevation": 612.3,
     }
-    import screens.new_map as new_map_mod
-    original = new_map_mod.derive_config_fields
-    new_map_mod.derive_config_fields = lambda dem_path: fields
-    try:
-        config = build_new_map_config("bre", "Bre", "data/bre/alti3d.vrt", "/data/tlm.gpkg")
-    finally:
-        new_map_mod.derive_config_fields = original
+    config = build_new_map_config("bre", "Bre", "/data/tlm.gpkg", fields)
 
     assert config["name"] == "bre"
     assert config["displayName"] == "Bre"
@@ -40,3 +34,12 @@ def test_build_new_map_config_matches_expected_schema():
     assert config["source_data"]["tlm"] == "/data/tlm.gpkg"
     assert config["source_data"]["dem"] == str(Path("data") / "bre" / "alti3d.vrt")
     assert config["checkpoints"] == []
+
+
+def test_is_swisstopo_csv_name_accepts_real_pattern():
+    assert is_swisstopo_csv_name("ch.swisstopo.swissalti3d-Dtpwvagz.csv") is True
+
+
+def test_is_swisstopo_csv_name_rejects_other_names():
+    assert is_swisstopo_csv_name("tiles.csv") is False
+    assert is_swisstopo_csv_name("ch.swisstopo.swissalti3d-Dtpwvagz.txt") is False

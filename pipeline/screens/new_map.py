@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from dem_config import derive_config_fields
+from dem_config import derive_config_fields, derive_config_fields_from_csv
 from settings import load_settings, save_settings
 from utils.dem import build_vrt
 
@@ -31,16 +31,24 @@ DEM_URL = "https://www.swisstopo.admin.ch/en/height-model-swissalti3d"
 TLM_URL = "https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d"
 
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+_SWISSTOPO_CSV_RE = re.compile(r"^ch\.swisstopo\..*\.csv$")
 
 
 def is_valid_map_name(name: str) -> bool:
     return bool(name) and bool(_NAME_RE.match(name))
 
 
-def build_new_map_config(name: str, display_name: str, dem_path: str, tlm_path: str) -> dict:
-    """Build the full config dict for a new map, deriving geospatial fields
-    from the DEM and filling the rest with sensible defaults."""
-    fields = derive_config_fields(dem_path)
+def is_swisstopo_csv_name(filename: str) -> bool:
+    """pipeline/scripts/00_download.py only looks for files matching this
+    exact pattern — a CSV under a different name would be silently ignored
+    at pipeline-run time, so this is checked up front instead."""
+    return bool(_SWISSTOPO_CSV_RE.match(filename))
+
+
+def build_new_map_config(name: str, display_name: str, tlm_path: str, fields: dict) -> dict:
+    """Build the full config dict for a new map from already-derived
+    geospatial fields (see dem_config.derive_config_fields /
+    derive_config_fields_from_csv) and sensible defaults for the rest."""
     return {
         "name": name,
         "displayName": display_name or name,
@@ -86,6 +94,7 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         super().__init__(parent)
         self._on_map_created = on_map_created
         self._dem_tiles_dir: Path | None = None
+        self._dem_csv_path: Path | None = None
         self._settings = load_settings(SETTINGS_PATH)
         # Created eagerly (not just on map creation) so it exists as an
         # obvious drop target in Finder/Explorer before the user even opens
@@ -149,29 +158,77 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._name_var = tk.StringVar()
         tk.Entry(form, textvariable=self._name_var, width=26).grid(row=0, column=1, sticky="w")
 
-        tk.Label(form, text="Elevation tiles folder:").grid(row=1, column=0, sticky="w", pady=4)
-        self._dem_dir_var = tk.StringVar()
-        tk.Entry(form, textvariable=self._dem_dir_var, width=32, state="readonly").grid(row=1, column=1, sticky="w")
-        tk.Button(form, text="Browse…", command=self._pick_dem_dir).grid(row=1, column=2, padx=6)
+        tk.Label(form, text="Elevation tiles:").grid(row=1, column=0, sticky="w", pady=4)
+        mode_row = tk.Frame(form)
+        mode_row.grid(row=1, column=1, columnspan=2, sticky="w")
+        self._dem_mode = tk.StringVar(value="folder")
+        tk.Radiobutton(
+            mode_row, text="I already downloaded the tiles", variable=self._dem_mode,
+            value="folder", command=self._on_dem_mode_change,
+        ).pack(side="left")
+        tk.Radiobutton(
+            mode_row, text="I have a swisstopo download-links CSV", variable=self._dem_mode,
+            value="csv", command=self._on_dem_mode_change,
+        ).pack(side="left", padx=(10, 0))
 
-        tk.Label(form, text="Landscape file:").grid(row=2, column=0, sticky="w", pady=4)
+        self._dem_source_label_var = tk.StringVar(value="Tiles folder:")
+        tk.Label(form, textvariable=self._dem_source_label_var).grid(row=2, column=0, sticky="w", pady=4)
+        self._dem_dir_var = tk.StringVar()
+        tk.Entry(form, textvariable=self._dem_dir_var, width=32, state="readonly").grid(row=2, column=1, sticky="w")
+        tk.Button(form, text="Browse…", command=self._pick_dem_source).grid(row=2, column=2, padx=6)
+        self._dem_hint_var = tk.StringVar(
+            value="Pick the folder you already downloaded swissALTI3D .tif tiles into."
+        )
+        tk.Label(
+            form, textvariable=self._dem_hint_var, fg="#94a3b8", font=("", 9),
+            wraplength=420, justify="left",
+        ).grid(row=3, column=1, columnspan=2, sticky="w")
+
+        tk.Label(form, text="Landscape file:").grid(row=4, column=0, sticky="w", pady=4)
         self._tlm_var = tk.StringVar(value=self._default_tlm_path())
-        tk.Entry(form, textvariable=self._tlm_var, width=32).grid(row=2, column=1, sticky="w")
-        tk.Button(form, text="Browse…", command=self._pick_tlm_file).grid(row=2, column=2, padx=6)
+        tk.Entry(form, textvariable=self._tlm_var, width=32).grid(row=4, column=1, sticky="w")
+        tk.Button(form, text="Browse…", command=self._pick_tlm_file).grid(row=4, column=2, padx=6)
 
         self._status_var = tk.StringVar()
-        tk.Label(self, textvariable=self._status_var, fg="#f44747").pack(anchor="w", padx=12)
+        tk.Label(self, textvariable=self._status_var, fg="#f44747", wraplength=560, justify="left").pack(
+            anchor="w", padx=12
+        )
 
         tk.Button(self, text="Create Map", command=self._on_create,
                   bg="#2d6a2d", activebackground="#3a8a3a").pack(anchor="w", padx=12, pady=8)
 
-    def _pick_dem_dir(self) -> None:
-        chosen = filedialog.askdirectory(
-            title="Select folder containing DEM .tif tiles", initialdir=str(DATA_DIR),
-        )
-        if chosen:
-            self._dem_tiles_dir = Path(chosen)
-            self._dem_dir_var.set(chosen)
+    def _on_dem_mode_change(self) -> None:
+        self._dem_tiles_dir = None
+        self._dem_csv_path = None
+        self._dem_dir_var.set("")
+        if self._dem_mode.get() == "csv":
+            self._dem_source_label_var.set("CSV file:")
+            self._dem_hint_var.set(
+                "Pick the ch.swisstopo....csv swisstopo gives you when too many tiles are "
+                "selected. Tiles download automatically the first time you run the pipeline."
+            )
+        else:
+            self._dem_source_label_var.set("Tiles folder:")
+            self._dem_hint_var.set("Pick the folder you already downloaded swissALTI3D .tif tiles into.")
+
+    def _pick_dem_source(self) -> None:
+        if self._dem_mode.get() == "csv":
+            chosen = filedialog.askopenfilename(
+                title="Select swisstopo download-links CSV", filetypes=[("CSV", "*.csv")],
+                initialdir=str(DATA_DIR),
+            )
+            if chosen:
+                self._dem_csv_path = Path(chosen)
+                self._dem_tiles_dir = None
+                self._dem_dir_var.set(chosen)
+        else:
+            chosen = filedialog.askdirectory(
+                title="Select folder containing DEM .tif tiles", initialdir=str(DATA_DIR),
+            )
+            if chosen:
+                self._dem_tiles_dir = Path(chosen)
+                self._dem_csv_path = None
+                self._dem_dir_var.set(chosen)
 
     def _pick_tlm_file(self) -> None:
         chosen = filedialog.askopenfilename(
@@ -185,12 +242,23 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._status_var.set("")
         name = self._name_var.get().strip()
         tlm_path = self._tlm_var.get().strip()
+        mode = self._dem_mode.get()
 
         if not is_valid_map_name(name):
             self._status_var.set("Map name must be non-empty and use only letters, numbers, - and _.")
             return
-        if self._dem_tiles_dir is None:
+        if mode == "folder" and self._dem_tiles_dir is None:
             self._status_var.set("Select a folder containing DEM .tif tiles.")
+            return
+        if mode == "csv" and self._dem_csv_path is None:
+            self._status_var.set("Select a swisstopo download-links CSV.")
+            return
+        if mode == "csv" and not is_swisstopo_csv_name(self._dem_csv_path.name):
+            self._status_var.set(
+                f"'{self._dem_csv_path.name}' doesn't look like a swisstopo CSV "
+                "(expected a name like ch.swisstopo.swissalti3d-XXXXXXXX.csv) — "
+                "the pipeline's download step won't find it under a different name."
+            )
             return
         if not tlm_path:
             self._status_var.set("Select a swissTLM3D GeoPackage.")
@@ -201,34 +269,81 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             self._status_var.set(f"A config named '{name}' already exists.")
             return
 
-        tif_files = sorted(str(p) for p in self._dem_tiles_dir.glob("*.tif"))
-        if not tif_files:
-            self._status_var.set("No .tif files found in that folder.")
-            return
-
         map_data_dir = DATA_DIR / name
-        vrt_path = map_data_dir / "alti3d.vrt"
         try:
             map_data_dir.mkdir(parents=True, exist_ok=True)
-            vrt_built = build_vrt(tif_files, vrt_path)
         except OSError as exc:
             self._status_var.set(f"Failed to prepare DEM data folder: {exc}")
             return
-        if not vrt_built:
-            self._status_var.set("Failed to build VRT — is GDAL installed?")
-            return
 
-        try:
-            config = build_new_map_config(name, name, str(vrt_path), tlm_path)
-        except Exception as exc:
-            shutil.rmtree(map_data_dir, ignore_errors=True)
-            self._status_var.set(f"Failed to derive config from DEM: {exc}")
-            return
+        if mode == "folder":
+            fields = self._create_from_tiles_folder(map_data_dir)
+        else:
+            fields = self._create_from_csv(map_data_dir)
+        if fields is None:
+            return  # error already shown, map_data_dir already cleaned up
 
+        config = build_new_map_config(name, name, tlm_path, fields)
         config_path.write_text(json.dumps(config, indent=2))
 
         save_settings(SETTINGS_PATH, {"tlm_path": tlm_path})
 
-        messagebox.showinfo("Map created", f"Created {config_path.name}. Switching to Run screen.")
+        if mode == "csv":
+            messagebox.showinfo(
+                "Map created",
+                f"Created {config_path.name}. Tiles will download automatically the "
+                "first time you run the pipeline for this map. Switching to Run screen.",
+            )
+        else:
+            messagebox.showinfo("Map created", f"Created {config_path.name}. Switching to Run screen.")
         if self._on_map_created:
             self._on_map_created(name)
+
+    def _create_from_tiles_folder(self, map_data_dir: Path) -> dict | None:
+        """Build the VRT from already-downloaded tiles and derive exact
+        fields from it. Returns None (after cleaning up) on failure."""
+        tif_files = sorted(str(p) for p in self._dem_tiles_dir.glob("*.tif"))
+        if not tif_files:
+            self._status_var.set("No .tif files found in that folder.")
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+            return None
+
+        vrt_path = map_data_dir / "alti3d.vrt"
+        try:
+            vrt_built = build_vrt(tif_files, vrt_path)
+        except OSError as exc:
+            self._status_var.set(f"Failed to build VRT: {exc}")
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+            return None
+        if not vrt_built:
+            self._status_var.set("Failed to build VRT — is GDAL installed?")
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+            return None
+
+        try:
+            return derive_config_fields(str(vrt_path))
+        except Exception as exc:
+            self._status_var.set(f"Failed to derive config from DEM: {exc}")
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+            return None
+
+    def _create_from_csv(self, map_data_dir: Path) -> dict | None:
+        """Copy the CSV into data/<name>/ (so the pipeline's download step
+        finds it) and derive approximate fields from tile filenames alone —
+        no download needed yet. base_elevation is a 0.0 placeholder, self-
+        corrected by 00_download.py once real tiles land."""
+        try:
+            fields = derive_config_fields_from_csv(str(self._dem_csv_path))
+        except Exception as exc:
+            self._status_var.set(f"Failed to read tile grid from CSV: {exc}")
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+            return None
+
+        try:
+            shutil.copy2(self._dem_csv_path, map_data_dir / self._dem_csv_path.name)
+        except OSError as exc:
+            self._status_var.set(f"Failed to copy CSV into data folder: {exc}")
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+            return None
+
+        return fields

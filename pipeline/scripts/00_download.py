@@ -7,6 +7,7 @@ the map viewer. Place the CSV next to the DEM tiles (same directory as the VRT).
 This script reads every ch.swisstopo.*.csv in that directory, checks which
 .tif files are already present, and downloads the rest.
 """
+import json
 import sys
 import urllib.request
 from pathlib import Path
@@ -53,23 +54,48 @@ def main(config_path: str) -> None:
             print(f"  ERROR downloading {url}: {exc}", file=sys.stderr)
 
     print("Download complete.")
-    _rebuild_vrt(dem_vrt, data_dir)
+    if _rebuild_vrt(dem_vrt, data_dir):
+        _refresh_derived_fields(config_path, config, dem_vrt)
 
 
-def _rebuild_vrt(vrt_path: Path, data_dir: Path) -> None:
+def _rebuild_vrt(vrt_path: Path, data_dir: Path) -> bool:
     """Rebuild the VRT index from all .tif files in data_dir."""
     from utils.dem import build_vrt
 
     tif_files = sorted(str(p) for p in data_dir.glob("*.tif"))
     if not tif_files:
         print("No .tif files found — skipping VRT rebuild.")
-        return
+        return False
 
     print(f"Rebuilding VRT from {len(tif_files)} tiles → {vrt_path.name}", flush=True)
     if build_vrt(tif_files, vrt_path):
         print("VRT rebuilt.")
-    else:
-        print("ERROR: VRT rebuild failed (GDAL unavailable or build failed).", file=sys.stderr)
+        return True
+    print("ERROR: VRT rebuild failed (GDAL unavailable or build failed).", file=sys.stderr)
+    return False
+
+
+def _refresh_derived_fields(config_path: str, config: dict, dem_vrt: Path) -> None:
+    """If base_elevation is still the New Map screen's swisstopo-CSV-mode
+    placeholder (0.0 — center/radius were already exact from the tile grid,
+    but elevation can only come from real raster data), recompute all four
+    derived fields now from the just-downloaded DEM and rewrite the config.
+    Left alone if base_elevation is any other value, so a manually tuned
+    config never gets silently overwritten."""
+    if config.get("base_elevation") != 0.0:
+        return
+
+    from dem_config import derive_config_fields
+
+    try:
+        fields = derive_config_fields(str(dem_vrt))
+    except Exception as exc:
+        print(f"WARNING: could not refresh center/radius/base_elevation: {exc}", file=sys.stderr)
+        return
+
+    config.update(fields)
+    Path(config_path).write_text(json.dumps(config, indent=2))
+    print("Refreshed center/radius/base_elevation from the downloaded DEM.")
 
 
 if __name__ == "__main__":

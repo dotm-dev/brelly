@@ -8,7 +8,10 @@ import pytest
 
 gdal = pytest.importorskip("osgeo.gdal")
 
-from dem_config import dem_extent, dem_center, sample_elevation, derive_config_fields
+from dem_config import (
+    dem_extent, dem_center, sample_elevation, derive_config_fields,
+    extent_from_swisstopo_csv, derive_config_fields_from_csv,
+)
 
 
 def _make_tif(path: Path, ox: float, oy: float, size: int = 10, px: float = 1.0, value: float = 450.0) -> None:
@@ -60,3 +63,51 @@ def test_derive_config_fields(tmp_path):
 def test_dem_extent_raises_on_invalid_path(tmp_path):
     with pytest.raises(ValueError):
         dem_extent(str(tmp_path / "does_not_exist.tif"))
+
+
+def _make_csv(path: Path, tiles: list[tuple[int, int]]) -> None:
+    lines = [
+        f"https://data.geo.admin.ch/ch.swisstopo.swissalti3d/swissalti3d_2022_{e}-{n}/swissalti3d_2022_{e}-{n}_0.5_2056_5728.tif"
+        for e, n in tiles
+    ]
+    path.write_text("\n".join(lines) + "\n")
+
+
+def test_extent_from_swisstopo_csv_single_tile(tmp_path):
+    csv = tmp_path / "ch.swisstopo.swissalti3d-abc.csv"
+    _make_csv(csv, [(2713, 1089)])
+    min_e, max_e, min_n, max_n = extent_from_swisstopo_csv(str(csv))
+    assert (min_e, max_e) == (2713000.0, 2714000.0)
+    assert (min_n, max_n) == (1089000.0, 1090000.0)
+
+
+def test_extent_from_swisstopo_csv_multiple_tiles_spans_grid(tmp_path):
+    csv = tmp_path / "ch.swisstopo.swissalti3d-abc.csv"
+    _make_csv(csv, [(2713, 1089), (2715, 1092)])
+    min_e, max_e, min_n, max_n = extent_from_swisstopo_csv(str(csv))
+    assert (min_e, max_e) == (2713000.0, 2716000.0)
+    assert (min_n, max_n) == (1089000.0, 1093000.0)
+
+
+def test_extent_from_swisstopo_csv_raises_on_empty_file(tmp_path):
+    csv = tmp_path / "empty.csv"
+    csv.write_text("")
+    with pytest.raises(ValueError):
+        extent_from_swisstopo_csv(str(csv))
+
+
+def test_extent_from_swisstopo_csv_raises_on_unparseable_lines(tmp_path):
+    csv = tmp_path / "bad.csv"
+    csv.write_text("not a tile url\n")
+    with pytest.raises(ValueError):
+        extent_from_swisstopo_csv(str(csv))
+
+
+def test_derive_config_fields_from_csv(tmp_path):
+    csv = tmp_path / "ch.swisstopo.swissalti3d-abc.csv"
+    _make_csv(csv, [(2713, 1089), (2715, 1092)])
+    fields = derive_config_fields_from_csv(str(csv))
+    assert fields["center_e"] == pytest.approx(2714500.0)
+    assert fields["center_n"] == pytest.approx(1091000.0)
+    assert fields["radius_m"] == pytest.approx(2000.0)
+    assert fields["base_elevation"] == 0.0
