@@ -34,6 +34,14 @@ if ! command -v brew >/dev/null 2>&1; then
   echo "  Will run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
   if confirm "Proceed?"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # The installer doesn't update PATH for the current shell, only future
+    # ones (via shell profile edits it prints instructions for) — so pick up
+    # the freshly installed brew here, checking both install locations.
+    if [ -x /opt/homebrew/bin/brew ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -x /usr/local/bin/brew ]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
   else
     step_failed "Homebrew is required. Install it from https://brew.sh"
   fi
