@@ -94,49 +94,59 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         self._build_ui()
 
+    def _link(self, parent, text: str, url: str) -> "tk.Label":
+        """Small hyperlink-style label — subtler than a full tk.Button."""
+        label = tk.Label(parent, text=text, fg="#4a9eda", cursor="hand2", font=("", 11, "underline"))
+        label.bind("<Button-1>", lambda _e: webbrowser.open(url))
+        return label
+
+    def _default_tlm_path(self) -> str:
+        """Remembered TLM path if any, else auto-detect a .gpkg sitting
+        directly in data/ (the download-once-share-everywhere convention)."""
+        remembered = self._settings.get("tlm_path", "")
+        if remembered and Path(remembered).exists():
+            return remembered
+        found = sorted(DATA_DIR.glob("*.gpkg"))
+        return str(found[0]) if found else ""
+
     def _build_ui(self) -> None:
+        intro = tk.Frame(self)
+        intro.pack(fill="x", padx=12, pady=(12, 4))
+
         tk.Label(
-            self,
-            text="Downloaded files go under data/ (gitignored — each machine keeps its own copy).",
-            fg="#94a3b8", font=("", 9),
-        ).pack(anchor="w", padx=12, pady=(10, 0))
+            intro, text="A map is built from two free swisstopo datasets:", font=("", 11),
+        ).grid(row=0, column=0, columnspan=2, sticky="w")
+
+        tk.Label(
+            intro, font=("", 11), fg="#94a3b8", wraplength=440, justify="left",
+            text="•  Elevation tiles (.tif) for your area — place them in data/<map name>/",
+        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+        self._link(intro, "swissALTI3D ↗", DEM_URL).grid(row=1, column=1, sticky="w", padx=(6, 0), pady=(4, 0))
+
+        tk.Label(
+            intro, font=("", 11), fg="#94a3b8", wraplength=440, justify="left",
+            text="•  Landscape file (.gpkg) — one download for all maps, place it in data/",
+        ).grid(row=2, column=0, sticky="w", pady=(2, 0))
+        self._link(intro, "swissTLM3D ↗", TLM_URL).grid(row=2, column=1, sticky="w", padx=(6, 0), pady=(2, 0))
+
+        ttk.Separator(self, orient="horizontal").pack(fill="x", padx=12, pady=(8, 4))
 
         form = tk.Frame(self)
-        form.pack(fill="x", padx=12, pady=12)
+        form.pack(fill="x", padx=12, pady=8)
 
         tk.Label(form, text="Map name:").grid(row=0, column=0, sticky="w", pady=4)
         self._name_var = tk.StringVar()
         tk.Entry(form, textvariable=self._name_var, width=26).grid(row=0, column=1, sticky="w")
 
-        tk.Label(form, text="DEM tiles folder:").grid(row=1, column=0, sticky="w", pady=(4, 0))
+        tk.Label(form, text="Elevation tiles folder:").grid(row=1, column=0, sticky="w", pady=4)
         self._dem_dir_var = tk.StringVar()
-        tk.Entry(form, textvariable=self._dem_dir_var, width=32, state="readonly").grid(
-            row=1, column=1, sticky="w", pady=(4, 0)
-        )
-        tk.Button(form, text="Browse…", command=self._pick_dem_dir).grid(row=1, column=2, padx=6, pady=(4, 0))
-        dem_help = tk.Frame(form)
-        dem_help.grid(row=2, column=1, columnspan=2, sticky="w", pady=(0, 8))
-        tk.Label(
-            dem_help, text="Elevation tiles (.tif) — swissALTI3D",
-            fg="#94a3b8", font=("", 9),
-        ).pack(side="left")
-        tk.Button(
-            dem_help, text="Open ↗", font=("", 9), command=lambda: webbrowser.open(DEM_URL),
-        ).pack(side="left", padx=(6, 0))
+        tk.Entry(form, textvariable=self._dem_dir_var, width=32, state="readonly").grid(row=1, column=1, sticky="w")
+        tk.Button(form, text="Browse…", command=self._pick_dem_dir).grid(row=1, column=2, padx=6)
 
-        tk.Label(form, text="TLM GeoPackage:").grid(row=3, column=0, sticky="w", pady=(4, 0))
-        self._tlm_var = tk.StringVar(value=self._settings.get("tlm_path", ""))
-        tk.Entry(form, textvariable=self._tlm_var, width=32).grid(row=3, column=1, sticky="w", pady=(4, 0))
-        tk.Button(form, text="Browse…", command=self._pick_tlm_file).grid(row=3, column=2, padx=6, pady=(4, 0))
-        tlm_help = tk.Frame(form)
-        tlm_help.grid(row=4, column=1, columnspan=2, sticky="w", pady=(0, 4))
-        tk.Label(
-            tlm_help, text="Roads/buildings/vegetation (.gpkg) — swissTLM3D",
-            fg="#94a3b8", font=("", 9),
-        ).pack(side="left")
-        tk.Button(
-            tlm_help, text="Open ↗", font=("", 9), command=lambda: webbrowser.open(TLM_URL),
-        ).pack(side="left", padx=(6, 0))
+        tk.Label(form, text="Landscape file:").grid(row=2, column=0, sticky="w", pady=4)
+        self._tlm_var = tk.StringVar(value=self._default_tlm_path())
+        tk.Entry(form, textvariable=self._tlm_var, width=32).grid(row=2, column=1, sticky="w")
+        tk.Button(form, text="Browse…", command=self._pick_tlm_file).grid(row=2, column=2, padx=6)
 
         self._status_var = tk.StringVar()
         tk.Label(self, textvariable=self._status_var, fg="#f44747").pack(anchor="w", padx=12)
