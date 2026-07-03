@@ -8,6 +8,18 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# Homebrew's installer never edits shell profiles for you — it just prints
+# instructions to do so. Without that edit, every new shell (including a
+# restarted run of this script) starts with a PATH that doesn't see brew,
+# even though it's installed on disk. Bootstrap it here unconditionally.
+if ! command -v brew >/dev/null 2>&1; then
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+fi
+
 confirm() {
   local prompt="$1"
   read -r -p "$prompt [y/N] " reply
