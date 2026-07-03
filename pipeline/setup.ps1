@@ -89,7 +89,7 @@ try { py -3.12 --version | Out-Null; $pythonOk = $true } catch { $pythonOk = $fa
 if (-not $pythonOk) {
     Write-Host ""
     Write-Host "X Python 3.12 not found." -ForegroundColor Red
-    Write-Host "  Will run: winget install Python.Python.3.12"
+    Write-Host "  Will run: winget install Python.Python.3.12" -ForegroundColor Cyan
     if (Confirm-Step "Proceed?") {
         $exit = Run-Step "Installing Python 3.12" "winget" @("install", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements", "--silent")
         if ($exit -ne 0) { Step-Failed "winget install Python.Python.3.12 failed." }
@@ -105,7 +105,7 @@ $blenderOk = [bool](Get-Command blender -ErrorAction SilentlyContinue)
 if (-not $blenderOk) {
     Write-Host ""
     Write-Host "X Blender not found." -ForegroundColor Red
-    Write-Host "  Will run: winget install BlenderFoundation.Blender"
+    Write-Host "  Will run: winget install BlenderFoundation.Blender" -ForegroundColor Cyan
     if (Confirm-Step "Proceed?") {
         $exit = Run-Step "Installing Blender" "winget" @("install", "BlenderFoundation.Blender", "--accept-package-agreements", "--accept-source-agreements", "--silent")
         if ($exit -ne 0) { Step-Failed "winget install BlenderFoundation.Blender failed." }
@@ -123,7 +123,7 @@ $nodeOk = [bool](Get-Command npm -ErrorAction SilentlyContinue)
 if (-not $nodeOk) {
     Write-Host ""
     Write-Host "X Node.js not found." -ForegroundColor Red
-    Write-Host "  Will run: winget install OpenJS.NodeJS.LTS"
+    Write-Host "  Will run: winget install OpenJS.NodeJS.LTS" -ForegroundColor Cyan
     if (Confirm-Step "Proceed?") {
         $exit = Run-Step "Installing Node.js" "winget" @("install", "OpenJS.NodeJS.LTS", "--accept-package-agreements", "--accept-source-agreements", "--silent")
         if ($exit -ne 0) { Step-Failed "winget install OpenJS.NodeJS.LTS failed." }
@@ -140,7 +140,7 @@ Write-Host "OK Node.js" -ForegroundColor Green
 if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
     Write-Host ""
     Write-Host "X gltfpack not found." -ForegroundColor Red
-    Write-Host "  Will run: npm install -g gltfpack"
+    Write-Host "  Will run: npm install -g gltfpack" -ForegroundColor Cyan
     if (Confirm-Step "Proceed?") {
         $exit = Run-Step "Installing gltfpack" "npm" @("install", "-g", "gltfpack")
         if ($exit -ne 0) { Step-Failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases" }
@@ -157,7 +157,7 @@ Write-Host "OK gltfpack" -ForegroundColor Green
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
     Write-Host ""
     Write-Host "X Virtual environment not found." -ForegroundColor Red
-    Write-Host "  Will run: py -3.12 -m venv .venv"
+    Write-Host "  Will run: py -3.12 -m venv .venv" -ForegroundColor Cyan
     if (Confirm-Step "Proceed?") {
         $exit = Run-Step "Creating virtual environment" "py" @("-3.12", "-m", "venv", ".venv")
         if ($exit -ne 0) { Step-Failed "py -3.12 -m venv .venv failed." }
@@ -179,7 +179,7 @@ try {
 if (-not $depsOk) {
     Write-Host ""
     Write-Host "X Python dependencies not installed (this also covers GDAL bindings)." -ForegroundColor Red
-    Write-Host "  Will run: .venv\Scripts\pip.exe install -r pipeline\requirements.txt"
+    Write-Host "  Will run: .venv\Scripts\pip.exe install -r pipeline\requirements.txt" -ForegroundColor Cyan
     if (Confirm-Step "Proceed?") {
         $exit = Run-Step "Installing Python dependencies" ".venv\Scripts\pip.exe" @("install", "-r", "pipeline\requirements.txt")
         if ($exit -ne 0) { Step-Failed ".venv\Scripts\pip.exe install -r pipeline\requirements.txt failed." }
@@ -196,4 +196,6 @@ Write-Host "OK Python dependencies" -ForegroundColor Green
 # 7. Launch the app
 Write-Host ""
 Write-Host "All requirements satisfied. Launching Brelly Pipeline app..."
+Write-Host "Next time, skip these checks and launch the app directly with:"
+Write-Host "  .venv\Scripts\python.exe pipeline\app.py"
 & .venv\Scripts\python.exe pipeline\app.py

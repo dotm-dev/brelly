@@ -49,10 +49,12 @@ confirm() {
 if [ -t 1 ]; then
   C_GREEN=$'\033[0;32m'
   C_RED=$'\033[0;31m'
+  C_CYAN=$'\033[0;36m'
   C_RESET=$'\033[0m'
 else
   C_GREEN=''
   C_RED=''
+  C_CYAN=''
   C_RESET=''
 fi
 
@@ -62,6 +64,10 @@ ok() {
 
 missing() {
   echo "${C_RED}✗ $1${C_RESET}"
+}
+
+will_run() {
+  echo "${C_CYAN}  Will run: $1${C_RESET}"
 }
 
 step_failed() {
@@ -121,7 +127,7 @@ echo "======================"
 if ! command -v brew >/dev/null 2>&1; then
   echo ""
   missing "Homebrew not found."
-  echo "  Will run: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+  will_run "/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
   if confirm "Proceed?"; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     # The installer doesn't update PATH for the current shell, only future
@@ -143,7 +149,7 @@ ok "Homebrew"
 if ! command -v python3.12 >/dev/null 2>&1; then
   echo ""
   missing "Python 3.12 not found."
-  echo "  Will run: brew install python@3.12"
+  will_run "brew install python@3.12"
   if confirm "Proceed?"; then
     run_step "Installing Python 3.12" brew install python@3.12 || step_failed "brew install python@3.12 failed."
   else
@@ -157,7 +163,7 @@ ok "Python 3.12"
 if ! python3.12 -c "import tkinter" >/dev/null 2>&1; then
   echo ""
   missing "tkinter not found."
-  echo "  Will run: brew install python-tk@3.12"
+  will_run "brew install python-tk@3.12"
   if confirm "Proceed?"; then
     run_step "Installing tkinter" brew install python-tk@3.12 || step_failed "brew install python-tk@3.12 failed."
   else
@@ -171,7 +177,7 @@ ok "tkinter"
 if ! command -v gdal-config >/dev/null 2>&1; then
   echo ""
   missing "GDAL system library not found."
-  echo "  Will run: brew install gdal"
+  will_run "brew install gdal"
   if confirm "Proceed?"; then
     run_step "Installing GDAL" brew install gdal || step_failed "brew install gdal failed."
   else
@@ -185,7 +191,7 @@ ok "GDAL system library"
 if ! command -v blender >/dev/null 2>&1; then
   echo ""
   missing "Blender not found."
-  echo "  Will run: brew install --cask blender"
+  will_run "brew install --cask blender"
   if confirm "Proceed?"; then
     run_step "Installing Blender" brew install --cask blender || step_failed "brew install --cask blender failed."
   else
@@ -200,7 +206,7 @@ ok "Blender"
 if ! command -v npm >/dev/null 2>&1; then
   echo ""
   missing "Node.js not found."
-  echo "  Will run: brew install node"
+  will_run "brew install node"
   if confirm "Proceed?"; then
     run_step "Installing Node.js" brew install node || step_failed "brew install node failed."
   else
@@ -214,7 +220,7 @@ ok "Node.js"
 if ! command -v gltfpack >/dev/null 2>&1; then
   echo ""
   missing "gltfpack not found."
-  echo "  Will run: npm install -g gltfpack"
+  will_run "npm install -g gltfpack"
   if confirm "Proceed?"; then
     run_step "Installing gltfpack" npm install -g gltfpack || step_failed "npm install -g gltfpack failed. Download manually from https://github.com/zeux/meshoptimizer/releases"
   else
@@ -228,7 +234,7 @@ ok "gltfpack"
 if [ ! -f ".venv/bin/python3" ]; then
   echo ""
   missing "Virtual environment not found."
-  echo "  Will run: python3.12 -m venv .venv"
+  will_run "python3.12 -m venv .venv"
   if confirm "Proceed?"; then
     run_step "Creating virtual environment" python3.12 -m venv .venv || step_failed "python3.12 -m venv .venv failed."
   else
@@ -242,7 +248,7 @@ ok "Virtual environment"
 if ! .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1; then
   echo ""
   missing "Python dependencies not installed."
-  echo "  Will run: .venv/bin/pip install -r pipeline/requirements.txt"
+  will_run ".venv/bin/pip install -r pipeline/requirements.txt"
   if confirm "Proceed?"; then
     run_step "Installing Python dependencies" .venv/bin/pip install -r pipeline/requirements.txt || step_failed ".venv/bin/pip install -r pipeline/requirements.txt failed."
   else
@@ -255,4 +261,6 @@ ok "Python dependencies"
 # 9. Launch the app
 echo ""
 echo "All requirements satisfied. Launching Brelly Pipeline app..."
+echo "Next time, skip these checks and launch the app directly with:"
+echo "  .venv/bin/python3 pipeline/app.py"
 exec .venv/bin/python3 pipeline/app.py
