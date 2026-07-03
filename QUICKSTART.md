@@ -5,7 +5,9 @@ Just want to see a map? Follow these steps in order.
 ## 1. Install everything
 - **Mac:** `bash pipeline/setup.sh`
 - **Windows:** `.\pipeline\setup.ps1` — run this in **PowerShell** (not Command Prompt),
-  ideally opened **as Administrator**, to avoid extra permission prompts.
+  ideally opened **as Administrator** (avoids extra permission prompts). If PowerShell
+  refuses to run the script at all, first run once:
+  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 Wait for it to finish — this launches an app window when done.
 

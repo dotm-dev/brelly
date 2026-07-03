@@ -19,9 +19,11 @@ whatever's missing, and launches the app when done:
 
 - **macOS:** `bash pipeline/setup.sh`
 - **Windows:** `.\pipeline\setup.ps1` — run from **PowerShell**, not Command Prompt (`cmd.exe`).
-  Prefer running PowerShell **as Administrator** — otherwise Windows (UAC) may prompt for
-  admin approval separately for each package it installs. If PowerShell blocks the script
-  from running, first run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+  Two separate Windows gates can stop this, and admin rights alone won't clear the first one:
+  1. PowerShell blocks unsigned scripts by default. If you get a "script is disabled" error,
+     run once: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+  2. Prefer running PowerShell **as Administrator** too — otherwise Windows (UAC) will prompt
+     you separately for each package the script installs.
 
 Both install without prompting by default. Flags:
 
