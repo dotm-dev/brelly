@@ -96,7 +96,7 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
 
     def _link(self, parent, text: str, url: str) -> "tk.Label":
         """Small hyperlink-style label — subtler than a full tk.Button."""
-        label = tk.Label(parent, text=text, fg="#4a9eda", cursor="hand2", font=("", 11, "underline"))
+        label = tk.Label(parent, text=text, fg="#4a9eda", cursor="hand2", font=("", 9, "underline"))
         label.bind("<Button-1>", lambda _e: webbrowser.open(url))
         return label
 
@@ -114,17 +114,17 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         intro.pack(fill="x", padx=12, pady=(12, 4))
 
         tk.Label(
-            intro, text="A map is built from two free swisstopo datasets:", font=("", 11),
+            intro, text="A map is built from two free swisstopo datasets:", font=("", 10),
         ).grid(row=0, column=0, columnspan=2, sticky="w")
 
         tk.Label(
-            intro, font=("", 11), fg="#94a3b8", wraplength=440, justify="left",
+            intro, font=("", 9), fg="#94a3b8", wraplength=520, justify="left",
             text="•  Elevation tiles (.tif) for your area — place them in data/<map name>/",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
         self._link(intro, "swissALTI3D ↗", DEM_URL).grid(row=1, column=1, sticky="w", padx=(6, 0), pady=(4, 0))
 
         tk.Label(
-            intro, font=("", 11), fg="#94a3b8", wraplength=440, justify="left",
+            intro, font=("", 9), fg="#94a3b8", wraplength=520, justify="left",
             text="•  Landscape file (.gpkg) — one download for all maps, place it in data/",
         ).grid(row=2, column=0, sticky="w", pady=(2, 0))
         self._link(intro, "swissTLM3D ↗", TLM_URL).grid(row=2, column=1, sticky="w", padx=(6, 0), pady=(2, 0))
