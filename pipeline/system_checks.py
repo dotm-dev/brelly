@@ -20,13 +20,6 @@ class CheckResult:
     detail: str = ""
     fix_macos: str = ""
     fix_windows: str = ""
-    # "requirement" (installable tooling) or "data" (per-map source files/
-    # config the user provides) — lets the UI group them into separate
-    # sections instead of one flat list.
-    category: str = "requirement"
-    # Set for "data" checks that point at an external download page rather
-    # than a copy-pasteable shell command.
-    url: str = ""
 
 
 def check_command(cmd: str, name: str, fix_macos: str = "", fix_windows: str = "") -> CheckResult:
@@ -115,66 +108,27 @@ def check_gltfpack() -> CheckResult:
     )
 
 
-def _any_config_has_valid_source(project_root: Path, source_key: str) -> bool:
-    """Check every non-example map config for a resolvable source_data path
-    (e.g. 'dem' or 'tlm'). A config counts even if its data lives outside
-    data/<name>/ — e.g. a shared swissTLM3D file reused across maps."""
-    config_dir = project_root / "pipeline" / "config"
-    if not config_dir.exists():
-        return False
-    for p in config_dir.glob("*.json"):
-        if p.stem == "example" or p.name.startswith("."):
-            continue
-        try:
-            data = json.loads(p.read_text())
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            continue
-        path_str = data.get("source_data", {}).get(source_key)
-        if path_str and (project_root / path_str).exists():
-            return True
-    return False
+def map_data_ready(config_path: Path, project_root: Path) -> CheckResult:
+    """Per-map data readiness: does this specific config's source_data.dem
+    and source_data.tlm both resolve to an existing file? Used by the Run
+    tab to flag individual maps, not a global "does any map have data"
+    check — with multiple maps that global version is nearly meaningless."""
+    name = config_path.stem
+    try:
+        data = json.loads(config_path.read_text())
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return CheckResult(name=name, ok=False, detail="Config file is invalid.")
 
+    source = data.get("source_data", {})
+    missing = []
+    for key, label in (("dem", "DEM"), ("tlm", "TLM")):
+        path_str = source.get(key)
+        if not path_str or not (project_root / path_str).exists():
+            missing.append(label)
 
-def check_dem_data(project_root: Path) -> CheckResult:
-    found = (
-        (any((project_root / "data").glob("*/alti3d.vrt")) if (project_root / "data").exists() else False)
-        or _any_config_has_valid_source(project_root, "dem")
-    )
-    return CheckResult(
-        name="DEM data", ok=found,
-        category="data",
-        fix_macos="Download swissALTI3D tiles, then set the path on the New Map screen",
-        fix_windows="Download swissALTI3D tiles, then set the path on the New Map screen",
-        url="https://www.swisstopo.admin.ch/en/height-model-swissalti3d",
-    )
-
-
-def check_tlm_data(project_root: Path) -> CheckResult:
-    data_dir = project_root / "data"
-    found = (
-        (any(data_dir.glob("*/*.gpkg")) if data_dir.exists() else False)
-        or _any_config_has_valid_source(project_root, "tlm")
-    )
-    return CheckResult(
-        name="TLM data", ok=found,
-        category="data",
-        fix_macos="Download swissTLM3D, then set the path on the New Map screen",
-        fix_windows="Download swissTLM3D, then set the path on the New Map screen",
-        url="https://www.swisstopo.admin.ch/en/landscape-model-swisstlm3d",
-    )
-
-
-def check_config(project_root: Path) -> CheckResult:
-    config_dir = project_root / "pipeline" / "config"
-    found = any(
-        p.stem != "example" for p in config_dir.glob("*.json")
-    ) if config_dir.exists() else False
-    return CheckResult(
-        name="Map config", ok=found,
-        category="data",
-        fix_macos="Use the New Map screen to create one",
-        fix_windows="Use the New Map screen to create one",
-    )
+    if missing:
+        return CheckResult(name=name, ok=False, detail=f"Missing {' and '.join(missing)} data")
+    return CheckResult(name=name, ok=True)
 
 
 # If you add a new installable dependency check here, also update the
@@ -189,9 +143,6 @@ _CHECK_FUNCS: dict[str, Callable[[Path], CheckResult]] = {
     "Python dependencies": check_deps,
     "Blender": lambda root: check_blender(),
     "gltfpack": lambda root: check_gltfpack(),
-    "DEM data": check_dem_data,
-    "TLM data": check_tlm_data,
-    "Map config": check_config,
 }
 
 
@@ -209,9 +160,6 @@ def run_all_checks(project_root: Path) -> list[CheckResult]:
         check_deps(project_root),
         check_blender(),
         check_gltfpack(),
-        check_dem_data(project_root),
-        check_tlm_data(project_root),
-        check_config(project_root),
     ]
     if platform.system() == "Darwin":
         checks.insert(0, check_command(

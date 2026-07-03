@@ -1,6 +1,8 @@
 # pipeline/screens/run.py
 """Run screen: pick a map config, choose which steps to run, watch the log.
-This is the GUI surface for run_pipeline.py."""
+This is the GUI surface for run_pipeline.py. Also owns the "+ New Map"
+popup, since creating a map only matters in the context of picking one to
+run — there's no need for it to be a persistent tab."""
 from __future__ import annotations
 
 import json
@@ -13,6 +15,8 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from run_pipeline import SCRIPTS
+from system_checks import map_data_ready
+from screens.new_map import NewMapScreen
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 PIPELINE_DIR = Path(__file__).parent.parent
@@ -86,57 +90,63 @@ except ModuleNotFoundError:
 
 
 class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
-    """Config picker, step-skip checkboxes, log pane. A tk.Frame meant to be
-    embedded inside the top-level App (see app.py), not a standalone window."""
+    """Map list (with per-map data-readiness status), step-skip checkboxes,
+    log pane. A tk.Frame meant to be embedded inside the top-level App (see
+    app.py), not a standalone window."""
 
     def __init__(self, parent) -> None:
         if not _TK_AVAILABLE:
             raise RuntimeError("tkinter is not available in this Python environment.")
         super().__init__(parent)
 
-        self._configs: list[tuple[str, Path]] = scan_configs(CONFIG_DIR)
+        self._configs: list[tuple[str, Path]] = []
+        self._ready: dict[str, bool] = {}
         self._skip: dict[str, tk.BooleanVar] = {}
         self._running = False
         self._log_queue: queue.Queue[str | None] = queue.Queue()
         self._tmp_config: Path | None = None
+        self._new_map_popup: tk.Toplevel | None = None
 
         self._build_ui()
+        self.refresh_configs()
 
     def refresh_configs(self) -> None:
-        """Re-scan pipeline/config/ (call after New Map screen creates one)."""
+        """Re-scan pipeline/config/ and re-check each map's data readiness."""
         self._configs = scan_configs(CONFIG_DIR)
-        names = [c[0] for c in self._configs]
-        self._map_combo["values"] = names
-        if names:
-            self._map_combo.current(len(names) - 1)
-            self._btn_run.config(state="normal")
+        self._populate_tree()
 
     def _build_ui(self) -> None:
         pad = {"padx": 8, "pady": 6}
 
         top = tk.Frame(self)
         top.pack(fill="x", **pad)
+        tk.Label(top, text="Maps", font=("", 12, "bold")).pack(side="left")
+        tk.Button(top, text="Refresh", command=self.refresh_configs).pack(side="right")
+        tk.Button(top, text="+ New Map", command=self._open_new_map_popup).pack(side="right", padx=(0, 6))
 
-        tk.Label(top, text="Map:").pack(side="left")
-        self._map_var = tk.StringVar()
-        names = [c[0] for c in self._configs]
-        self._map_combo = ttk.Combobox(
-            top, textvariable=self._map_var, values=names, state="readonly", width=18
+        self._tree = ttk.Treeview(
+            self, columns=("status",), show="tree headings", selectmode="browse", height=6,
         )
-        if names:
-            self._map_combo.current(0)
-        self._map_combo.pack(side="left", padx=(4, 16))
+        self._tree.heading("#0", text="Map")
+        self._tree.heading("status", text="Status")
+        self._tree.column("#0", width=220)
+        self._tree.column("status", width=200)
+        self._tree.tag_configure("ready", foreground="#6a9955")
+        self._tree.tag_configure("not_ready", foreground="#f44747")
+        self._tree.pack(fill="x", padx=8)
+        self._tree.bind("<<TreeviewSelect>>", lambda _e: self._on_tree_select())
+
+        self._empty_label = tk.Label(
+            self, text="No maps yet — click + New Map to create one.", fg="#94a3b8",
+        )
 
         self._btn_run = tk.Button(
-            top, text="Run Pipeline", command=self._on_run_pipeline,
+            self, text="Run Pipeline", command=self._on_run_pipeline,
             width=14, bg="#2d6a2d", activebackground="#3a8a3a",
         )
-        self._btn_run.pack(side="left", padx=4)
+        self._btn_run.pack(anchor="w", padx=8, pady=(6, 0))
 
-        if not self._configs:
-            self._btn_run.config(state="disabled")
-
-        ttk.Separator(self, orient="horizontal").pack(fill="x", padx=8)
+        ttk.Separator(self, orient="horizontal").pack(fill="x", padx=8, pady=(6, 0))
 
         steps_frame = tk.LabelFrame(self, text="Steps", padx=8, pady=4)
         steps_frame.pack(fill="x", padx=8, pady=(4, 2))
@@ -157,20 +167,66 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._log.tag_config("error", foreground="#f44747")
         self._log.tag_config("ok", foreground="#6a9955")
 
-    def _append(self, text: str, tag: str | None = None) -> None:
-        self._log.config(state="normal")
-        self._log.insert("end", text + "\n", tag or "")
-        self._log.see("end")
-        self._log.config(state="disabled")
+    def _populate_tree(self) -> None:
+        selected = self._selected_name()
+        for item in self._tree.get_children():
+            self._tree.delete(item)
+        self._ready = {}
 
-    def _set_running(self, running: bool) -> None:
-        self._running = running
-        state = "disabled" if running else "normal"
-        self._btn_run.config(state=state)
-        self._map_combo.config(state="disabled" if running else "readonly")
+        if not self._configs:
+            self._empty_label.pack(anchor="w", padx=8, pady=(0, 6))
+        else:
+            self._empty_label.pack_forget()
+
+        first_ready = None
+        for name, path in self._configs:
+            result = map_data_ready(path, PROJECT_ROOT)
+            self._ready[name] = result.ok
+            status = "✓ ready" if result.ok else f"✗ {result.detail}"
+            tag = "ready" if result.ok else "not_ready"
+            self._tree.insert("", "end", iid=name, text=name, values=(status,), tags=(tag,))
+            if result.ok and first_ready is None:
+                first_ready = name
+
+        to_select = selected if selected in self._ready else first_ready
+        if to_select is not None:
+            self._tree.selection_set(to_select)
+            self._tree.see(to_select)
+        self._on_tree_select()
+
+    def _selected_name(self) -> str | None:
+        selection = self._tree.selection() if hasattr(self, "_tree") else ()
+        return selection[0] if selection else None
+
+    def _on_tree_select(self) -> None:
+        name = self._selected_name()
+        can_run = name is not None and self._ready.get(name, False) and not self._running
+        self._btn_run.config(state="normal" if can_run else "disabled")
+
+    def _open_new_map_popup(self) -> None:
+        if self._new_map_popup is not None and self._new_map_popup.winfo_exists():
+            self._new_map_popup.lift()
+            return
+
+        popup = tk.Toplevel(self)
+        popup.title("New Map")
+        popup.geometry("520x220")
+        popup.transient(self.winfo_toplevel())
+        NewMapScreen(popup, on_map_created=lambda name: self._on_map_created(popup, name)).pack(
+            fill="both", expand=True
+        )
+        self._new_map_popup = popup
+
+    def _on_map_created(self, popup: tk.Toplevel, name: str) -> None:
+        popup.destroy()
+        self._new_map_popup = None
+        self.refresh_configs()
+        if name in self._ready:
+            self._tree.selection_set(name)
+            self._tree.see(name)
 
     def _selected_config_path(self) -> Path | None:
-        name = self._map_var.get()
+        name = self._selected_name()
         for display, path in self._configs:
             if display == name:
                 return path
@@ -184,7 +240,11 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             return
         cfg_path = self._selected_config_path()
         if cfg_path is None:
-            self._append("No config selected.", tag="error")
+            self._append("No map selected.", tag="error")
+            return
+        name = self._selected_name()
+        if not self._ready.get(name, False):
+            self._append(f"'{name}' isn't ready — fix its DEM/TLM data first.", tag="error")
             return
 
         self._tmp_config = CONFIG_DIR / f".tmp_{cfg_path.stem}.json"
@@ -195,12 +255,23 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             self._tmp_config = None
             return
 
-        self._append(f"\n── Run Pipeline · {self._map_var.get()} ──────────────────", tag="ok")
+        self._append(f"\n── Run Pipeline · {name} ──────────────────", tag="ok")
         self._set_running(True)
 
         cmd = [str(VENV_PYTHON), str(PIPELINE_DIR / "run_pipeline.py"), str(self._tmp_config)]
         run_subprocess(cmd, self._log_queue)
         self._poll_queue()
+
+    def _append(self, text: str, tag: str | None = None) -> None:
+        self._log.config(state="normal")
+        self._log.insert("end", text + "\n", tag or "")
+        self._log.see("end")
+        self._log.config(state="disabled")
+
+    def _set_running(self, running: bool) -> None:
+        self._running = running
+        self._tree.state(("disabled",) if running else ("!disabled",))
+        self._on_tree_select()
 
     def _poll_queue(self) -> None:
         try:

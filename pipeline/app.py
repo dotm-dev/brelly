@@ -18,8 +18,7 @@ except ModuleNotFoundError:
     _TK_AVAILABLE = False
 
 from screens.system_check import SystemCheckScreen
-from screens.new_map import NewMapScreen
-from screens.run import RunScreen, scan_configs, CONFIG_DIR
+from screens.run import RunScreen
 
 
 class App(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
@@ -35,11 +34,9 @@ class App(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
         self._notebook.pack(fill="both", expand=True)
 
         self._system_tab = SystemCheckScreen(self._notebook, on_all_ok=self._on_system_ok)
-        self._new_map_tab = NewMapScreen(self._notebook, on_map_created=self._on_map_created)
         self._run_tab = RunScreen(self._notebook)
 
         self._notebook.add(self._system_tab, text="System Check")
-        self._notebook.add(self._new_map_tab, text="New Map")
         self._notebook.add(self._run_tab, text="Run")
 
         self._select_initial_tab()
@@ -47,17 +44,11 @@ class App(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
     def _select_initial_tab(self) -> None:
         if not self._system_tab.all_ok():
             self._notebook.select(self._system_tab)
-        elif not scan_configs(CONFIG_DIR):
-            self._notebook.select(self._new_map_tab)
         else:
             self._notebook.select(self._run_tab)
 
     def _on_system_ok(self) -> None:
         pass  # system check passing doesn't force navigation away from wherever the user is
-
-    def _on_map_created(self, name: str) -> None:
-        self._run_tab.refresh_configs()
-        self._notebook.select(self._run_tab)
 
 
 def main() -> None:

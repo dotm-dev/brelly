@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from unittest.mock import patch
 import pytest
 
-from system_checks import CheckResult, run_all_checks, check_command
+from system_checks import CheckResult, run_all_checks, check_command, map_data_ready
 
 
 def test_check_command_found():
@@ -32,49 +32,42 @@ def test_run_all_checks_returns_named_results(tmp_path):
     assert "Python dependencies" in names
     assert "Blender" in names
     assert "gltfpack" in names
-    assert "DEM data" in names
-    assert "TLM data" in names
-    assert "Map config" in names
 
 
-def test_run_all_checks_data_missing_when_no_data_dir(tmp_path):
-    results = run_all_checks(project_root=tmp_path)
-    dem_check = next(r for r in results if r.name == "DEM data")
-    assert dem_check.ok is False
+def test_map_data_ready_true_when_both_sources_exist(tmp_path):
+    dem = tmp_path / "data" / "my_map" / "alti3d.vrt"
+    dem.parent.mkdir(parents=True)
+    dem.write_text("<VRTDataset></VRTDataset>")
+    tlm = tmp_path / "shared" / "swissTLM3D.gpkg"
+    tlm.parent.mkdir(parents=True)
+    tlm.write_text("fake gpkg content")
 
-
-def test_run_all_checks_data_found(tmp_path):
-    dem_dir = tmp_path / "data" / "my_area"
-    dem_dir.mkdir(parents=True)
-    (dem_dir / "alti3d.vrt").write_text("<VRTDataset></VRTDataset>")
-    results = run_all_checks(project_root=tmp_path)
-    dem_check = next(r for r in results if r.name == "DEM data")
-    assert dem_check.ok is True
-
-
-def test_check_tlm_data_true_when_config_references_external_path(tmp_path):
-    config_dir = tmp_path / "pipeline" / "config"
-    config_dir.mkdir(parents=True)
-    external_tlm = tmp_path / "shared" / "swissTLM3D.gpkg"
-    external_tlm.parent.mkdir(parents=True)
-    external_tlm.write_text("fake gpkg content")
-    config = {
+    config_path = tmp_path / "my_map.json"
+    config_path.write_text(json.dumps({
         "name": "my_map",
-        "source_data": {
-            "tlm": str(external_tlm.relative_to(tmp_path)),
-            "dem": "data/my_map/alti3d.vrt",
-        },
-    }
-    (config_dir / "my_map.json").write_text(json.dumps(config))
+        "source_data": {"dem": str(dem.relative_to(tmp_path)), "tlm": str(tlm.relative_to(tmp_path))},
+    }))
 
-    from system_checks import check_tlm_data
-    result = check_tlm_data(project_root=tmp_path)
+    result = map_data_ready(config_path, project_root=tmp_path)
     assert result.ok is True
+    assert result.name == "my_map"
 
 
-def test_check_tlm_data_false_when_no_data_and_no_config(tmp_path):
-    from system_checks import check_tlm_data
-    result = check_tlm_data(project_root=tmp_path)
+def test_map_data_ready_false_and_names_missing_sources(tmp_path):
+    config_path = tmp_path / "my_map.json"
+    config_path.write_text(json.dumps({"name": "my_map", "source_data": {}}))
+
+    result = map_data_ready(config_path, project_root=tmp_path)
+    assert result.ok is False
+    assert "DEM" in result.detail
+    assert "TLM" in result.detail
+
+
+def test_map_data_ready_false_for_invalid_config_file(tmp_path):
+    config_path = tmp_path / "broken.json"
+    config_path.write_text("not valid json")
+
+    result = map_data_ready(config_path, project_root=tmp_path)
     assert result.ok is False
 
 
@@ -84,19 +77,6 @@ def test_run_single_check_blender_matches_check_blender():
     expected = check_blender()
     assert result.name == expected.name
     assert result.ok == expected.ok
-
-
-def test_run_single_check_map_config_uses_project_root(tmp_path):
-    from system_checks import run_single_check
-    result = run_single_check("Map config", project_root=tmp_path)
-    assert result.name == "Map config"
-    assert result.ok is False
-
-    config_dir = tmp_path / "pipeline" / "config"
-    config_dir.mkdir(parents=True)
-    (config_dir / "my_map.json").write_text('{"name": "my_map"}')
-    result2 = run_single_check("Map config", project_root=tmp_path)
-    assert result2.ok is True
 
 
 def test_run_single_check_unknown_name_raises_keyerror():
