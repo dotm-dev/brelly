@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from run_pipeline import SCRIPTS
 from system_checks import map_data_ready
 from screens.new_map import NewMapScreen
+from screens.ui import center_window
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 PIPELINE_DIR = Path(__file__).parent.parent
@@ -210,7 +211,7 @@ class RunScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
 
         popup = tk.Toplevel(self)
         popup.title("New Map")
-        popup.geometry("620x360")
+        center_window(popup, 620, 340, parent=self.winfo_toplevel())
         popup.transient(self.winfo_toplevel())
         NewMapScreen(popup, on_map_created=lambda name: self._on_map_created(popup, name)).pack(
             fill="both", expand=True

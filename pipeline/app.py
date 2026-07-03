@@ -19,6 +19,7 @@ except ModuleNotFoundError:
 
 from screens.system_check import SystemCheckScreen
 from screens.run import RunScreen
+from screens.ui import center_window
 
 
 class App(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
@@ -27,7 +28,7 @@ class App(tk.Tk if _TK_AVAILABLE else object):  # type: ignore[misc]
             raise RuntimeError("tkinter is not available in this Python environment.")
         super().__init__()
         self.title("Brelly Pipeline")
-        self.geometry("760x560")
+        center_window(self, 760, 560)
         self.minsize(560, 420)
 
         self._notebook = ttk.Notebook(self)
