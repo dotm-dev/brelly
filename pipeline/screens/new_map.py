@@ -270,6 +270,12 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             return
 
         map_data_dir = DATA_DIR / name
+        # Only clean up map_data_dir on failure if we're the ones who
+        # created it — on a case-insensitive filesystem (default on macOS),
+        # "Test" and "test" resolve to the same directory, so a name that
+        # collides case-insensitively with an existing folder must never
+        # have its pre-existing contents wiped out by our own error path.
+        already_existed = map_data_dir.exists()
         try:
             map_data_dir.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
@@ -277,11 +283,11 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
             return
 
         if mode == "folder":
-            fields = self._create_from_tiles_folder(map_data_dir)
+            fields = self._create_from_tiles_folder(map_data_dir, cleanup=not already_existed)
         else:
-            fields = self._create_from_csv(map_data_dir)
+            fields = self._create_from_csv(map_data_dir, cleanup=not already_existed)
         if fields is None:
-            return  # error already shown, map_data_dir already cleaned up
+            return  # error already shown, map_data_dir cleaned up if it was safe to
 
         config = build_new_map_config(name, name, tlm_path, fields)
         config_path.write_text(json.dumps(config, indent=2))
@@ -299,35 +305,37 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         if self._on_map_created:
             self._on_map_created(name)
 
-    def _create_from_tiles_folder(self, map_data_dir: Path) -> dict | None:
+    def _fail(self, message: str, map_data_dir: Path, cleanup: bool) -> None:
+        self._status_var.set(message)
+        if cleanup:
+            shutil.rmtree(map_data_dir, ignore_errors=True)
+
+    def _create_from_tiles_folder(self, map_data_dir: Path, cleanup: bool) -> dict | None:
         """Build the VRT from already-downloaded tiles and derive exact
-        fields from it. Returns None (after cleaning up) on failure."""
+        fields from it. Returns None (after cleaning up, if safe to) on
+        failure."""
         tif_files = sorted(str(p) for p in self._dem_tiles_dir.glob("*.tif"))
         if not tif_files:
-            self._status_var.set("No .tif files found in that folder.")
-            shutil.rmtree(map_data_dir, ignore_errors=True)
+            self._fail("No .tif files found in that folder.", map_data_dir, cleanup)
             return None
 
         vrt_path = map_data_dir / "alti3d.vrt"
         try:
             vrt_built = build_vrt(tif_files, vrt_path)
         except OSError as exc:
-            self._status_var.set(f"Failed to build VRT: {exc}")
-            shutil.rmtree(map_data_dir, ignore_errors=True)
+            self._fail(f"Failed to build VRT: {exc}", map_data_dir, cleanup)
             return None
         if not vrt_built:
-            self._status_var.set("Failed to build VRT — is GDAL installed?")
-            shutil.rmtree(map_data_dir, ignore_errors=True)
+            self._fail("Failed to build VRT — is GDAL installed?", map_data_dir, cleanup)
             return None
 
         try:
             return derive_config_fields(str(vrt_path))
         except Exception as exc:
-            self._status_var.set(f"Failed to derive config from DEM: {exc}")
-            shutil.rmtree(map_data_dir, ignore_errors=True)
+            self._fail(f"Failed to derive config from DEM: {exc}", map_data_dir, cleanup)
             return None
 
-    def _create_from_csv(self, map_data_dir: Path) -> dict | None:
+    def _create_from_csv(self, map_data_dir: Path, cleanup: bool) -> dict | None:
         """Copy the CSV into data/<name>/ (so the pipeline's download step
         finds it) and derive approximate fields from tile filenames alone —
         no download needed yet. base_elevation is a 0.0 placeholder, self-
@@ -335,15 +343,24 @@ class NewMapScreen(tk.Frame if _TK_AVAILABLE else object):  # type: ignore[misc]
         try:
             fields = derive_config_fields_from_csv(str(self._dem_csv_path))
         except Exception as exc:
-            self._status_var.set(f"Failed to read tile grid from CSV: {exc}")
-            shutil.rmtree(map_data_dir, ignore_errors=True)
+            self._fail(f"Failed to read tile grid from CSV: {exc}", map_data_dir, cleanup)
             return None
 
+        dest = map_data_dir / self._dem_csv_path.name
+        # The CSV may already sit exactly where we'd copy it — e.g. the map
+        # name collides case-insensitively with an existing data/ folder
+        # (macOS's default filesystem), or the user just points at a file
+        # already placed correctly. Copying a file onto itself is an error,
+        # not a real failure, so skip it rather than reporting one.
         try:
-            shutil.copy2(self._dem_csv_path, map_data_dir / self._dem_csv_path.name)
-        except OSError as exc:
-            self._status_var.set(f"Failed to copy CSV into data folder: {exc}")
-            shutil.rmtree(map_data_dir, ignore_errors=True)
-            return None
+            already_in_place = self._dem_csv_path.samefile(dest)
+        except OSError:
+            already_in_place = False
+        if not already_in_place:
+            try:
+                shutil.copy2(self._dem_csv_path, dest)
+            except OSError as exc:
+                self._fail(f"Failed to copy CSV into data folder: {exc}", map_data_dir, cleanup)
+                return None
 
         return fields
