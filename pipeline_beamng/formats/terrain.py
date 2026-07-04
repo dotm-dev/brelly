@@ -27,3 +27,47 @@ def encode_heightmap(heights: list[list[float]], margin_frac: float = 0.1) -> tu
     normalized = (arr - position_z) / max_height
     u16 = np.clip(np.round(normalized * 65536.0), 0, 65535).astype(np.uint16)
     return u16, position_z, max_height
+
+
+def write_ter_file(path: Path, heightmap_u16: np.ndarray, materials: list[str]) -> None:
+    """Write BeamNG's binary .ter format: version(u8), size(u32),
+    heightMap(u16 le array, row-major), layerMap(u8 array, row-major material
+    index), materialCount(u32), materialNames(null-terminated UTF-8 strings).
+
+    v1 always writes a flat layerMap (every cell = material index 0) — no
+    per-pixel texture painting yet.
+    """
+    size = heightmap_u16.shape[0]
+    assert heightmap_u16.shape == (size, size), "heightmap must be square"
+
+    layer_map = np.zeros((size, size), dtype=np.uint8)
+
+    with open(path, "wb") as f:
+        f.write(struct.pack("<B", 8))
+        f.write(struct.pack("<I", size))
+        f.write(heightmap_u16.astype("<u2").tobytes())
+        f.write(layer_map.tobytes())
+        f.write(struct.pack("<I", len(materials)))
+        for name in materials:
+            f.write(name.encode("utf-8") + b"\x00")
+
+
+def write_terrain_json(path: Path, size: int, ter_rel_path: str,
+                        heightmap_png_rel_path: str, materials: list[str]) -> None:
+    data = {
+        "version": 8,
+        "datafile": ter_rel_path,
+        "heightmapImage": heightmap_png_rel_path,
+        "size": size,
+        "binaryFormat": (
+            "version(u8), size(u32), heightMap(u16 le array), "
+            "layerMap(u8 array), materialCount(u32), "
+            "materialNames(null-terminated utf8 strings)"
+        ),
+        "heightMapSize": size * size,
+        "heightMapItemSize": 2,
+        "layerMapSize": size * size,
+        "layerMapItemSize": 1,
+        "materials": materials,
+    }
+    path.write_text(json.dumps(data, indent=2))
