@@ -71,3 +71,25 @@ def write_terrain_json(path: Path, size: int, ter_rel_path: str,
         "materials": materials,
     }
     path.write_text(json.dumps(data, indent=2))
+
+
+def write_heightmap_png(path: Path, heightmap_u16: np.ndarray) -> None:
+    """16-bit grayscale PNG — BeamNG docs: 'Heightmaps must be 16-bit PNG
+    to preserve elevation details.'"""
+    from PIL import Image
+    img = Image.fromarray(heightmap_u16, mode="I;16")
+    img.save(path)
+
+
+def terrainblock_object(name: str, position_xyz: tuple[float, float, float],
+                         square_size: float, max_height: float,
+                         terrain_file_rel: str) -> dict:
+    x, y, z = position_xyz
+    return {
+        "class": "TerrainBlock",
+        "name": name,
+        "position": [round(x, 3), round(y, 3), round(z, 3)],
+        "terrainFile": terrain_file_rel,
+        "squareSize": round(square_size, 4),
+        "maxHeight": round(max_height, 3),
+    }
