@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))         # repo root, for shared/
 from dem_config import derive_config_fields, derive_config_fields_from_csv
 from settings import load_settings, save_settings
 from shared.utils.dem import build_vrt

@@ -8,8 +8,7 @@ Output: maps/<name>/reprojected.gpkg  (same CRS, clipped to bbox)
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))                # repo root, for shared/
 from shared.utils.io import read_json, ensure_dir, output_dir
 from shared.utils.coords import config_from_dict, bbox_from_center
 

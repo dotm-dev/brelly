@@ -2,8 +2,7 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))                # repo root, for shared/
 from scripts.road_graph import build_road_graph, RoadLine
 from shared.utils.coords import Config
 

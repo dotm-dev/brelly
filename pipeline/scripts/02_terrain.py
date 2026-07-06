@@ -8,8 +8,7 @@ avoiding WebGL index-count limits. TARGET_TILE_VERTS×TARGET_TILE_VERTS tiles at
 import sys, json, struct, math
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))                # repo root, for shared/
 from shared.utils.io import read_json, ensure_dir, output_dir
 from shared.utils.coords import config_from_dict
 from scripts._terrain_conform import conform_to_roads

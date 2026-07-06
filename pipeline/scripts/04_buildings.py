@@ -4,8 +4,7 @@
 import sys, struct
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))                # repo root, for shared/
 from shared.utils.io import read_json, ensure_dir, output_dir, progress
 from shared.utils.coords import config_from_dict, lv95_to_enu
 
