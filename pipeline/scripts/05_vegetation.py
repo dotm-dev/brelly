@@ -4,10 +4,11 @@
 import math, random, sys, struct
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json, write_json, output_dir, progress
-from utils.coords import config_from_dict, lv95_to_enu, bbox_from_center
-from utils.constants import TREE_LIFT, TREE_HEIGHT, TREE_RADIUS, TREE_SIDES
+from shared.utils.io import read_json, write_json, output_dir, progress
+from shared.utils.coords import config_from_dict, lv95_to_enu, bbox_from_center
+from shared.utils.constants import TREE_LIFT, TREE_HEIGHT, TREE_RADIUS, TREE_SIDES
 
 # Target trees scattered into forest polygons (globally capped)
 FOREST_TREE_BUDGET = 12_000

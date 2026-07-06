@@ -4,8 +4,9 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json, write_json, output_dir
+from shared.utils.io import read_json, write_json, output_dir
 from scripts.manifest import build_manifest
 
 

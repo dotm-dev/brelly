@@ -8,9 +8,10 @@ avoiding WebGL index-count limits. TARGET_TILE_VERTS×TARGET_TILE_VERTS tiles at
 import sys, json, struct, math
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json, ensure_dir, output_dir
-from utils.coords import config_from_dict
+from shared.utils.io import read_json, ensure_dir, output_dir
+from shared.utils.coords import config_from_dict
 from scripts._terrain_conform import conform_to_roads
 
 TARGET_TILE_VERTS = 500   # max vertices per tile side; each tile ≤ 3M indices
@@ -238,7 +239,7 @@ def main(config_path: str) -> None:
     # Base texture size on physical extent, not heightmap vert count (which may be capped).
     # Texture is saved as a separate file — not embedded in the GLB — so the GLB stays lean
     # and there's no 4096 WebGL embed limit to worry about.
-    from utils.coords import config_from_dict as _cfg
+    from shared.utils.coords import config_from_dict as _cfg
     import shutil
     _c = _cfg(config_dict)
     tex_size = min(8192, max(int(_c.radius_m * 2 / 1.75), 2048))
@@ -274,7 +275,7 @@ def _load_or_synthesize_heightmap(config_dict: dict) -> dict:
     try:
         from osgeo import gdal
         import numpy as np
-        from utils.coords import bbox_from_center
+        from shared.utils.coords import bbox_from_center
         gdal.UseExceptions()
         config = config_from_dict(config_dict)
         dem_path = config_dict["source_data"].get("dem", "")
@@ -344,7 +345,7 @@ def _smooth_and_save_splines(config_dict: dict, bbox: dict, config, dem_ds) -> t
     try:
         import json as _json
         from osgeo import ogr
-        from utils.io import output_dir
+        from shared.utils.io import output_dir
         from scripts.road_graph import RoadLine
         from scripts._road_smoother import smooth_roads
 
@@ -416,7 +417,7 @@ def _smooth_and_save_splines(config_dict: dict, bbox: dict, config, dem_ds) -> t
 
 def _fetch_swissimage(config_dict: dict, out_dir: Path, tex_size: int = 1024) -> str | None:
     try:
-        from utils.coords import config_from_dict
+        from shared.utils.coords import config_from_dict
         config = config_from_dict(config_dict)
     except Exception:
         return None
@@ -428,7 +429,7 @@ def _fetch_swissimage(config_dict: dict, out_dir: Path, tex_size: int = 1024) ->
 
     try:
         from osgeo import gdal
-        from utils.coords import bbox_from_center
+        from shared.utils.coords import bbox_from_center
         gdal.UseExceptions()
 
         bbox = bbox_from_center(config)

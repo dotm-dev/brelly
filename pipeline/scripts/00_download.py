@@ -13,8 +13,9 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json
+from shared.utils.io import read_json
 
 
 def main(config_path: str) -> None:
@@ -60,7 +61,7 @@ def main(config_path: str) -> None:
 
 def _rebuild_vrt(vrt_path: Path, data_dir: Path) -> bool:
     """Rebuild the VRT index from all .tif files in data_dir."""
-    from utils.dem import build_vrt
+    from shared.utils.dem import build_vrt
 
     tif_files = sorted(str(p) for p in data_dir.glob("*.tif"))
     if not tif_files:

@@ -5,10 +5,11 @@ import re
 import sys, struct, math
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json, ensure_dir, output_dir, progress
-from utils.coords import config_from_dict, lv95_to_enu, bbox_from_center
-from utils.constants import ROAD_LIFT, MAX_ROAD_MITER
+from shared.utils.io import read_json, ensure_dir, output_dir, progress
+from shared.utils.coords import config_from_dict, lv95_to_enu, bbox_from_center
+from shared.utils.constants import ROAD_LIFT, MAX_ROAD_MITER
 from scripts.road_graph import RoadLine
 from scripts._road_resampler import _resample_nodes
 

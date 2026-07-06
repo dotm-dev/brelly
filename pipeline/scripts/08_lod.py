@@ -4,8 +4,9 @@
 import sys, math, importlib.util
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json, output_dir
+from shared.utils.io import read_json, output_dir
 
 # Load TARGET_TILE_VERTS from 02_terrain.py so tile counts stay in sync.
 _terrain_spec = importlib.util.spec_from_file_location(

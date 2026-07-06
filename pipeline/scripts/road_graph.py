@@ -2,7 +2,7 @@
 """Build a RoadGraph from road centerline geometries."""
 from dataclasses import dataclass
 import hashlib
-from utils.coords import Config, lv95_to_enu
+from shared.utils.coords import Config, lv95_to_enu
 
 
 @dataclass
