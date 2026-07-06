@@ -53,7 +53,7 @@ def sample_elevation(dem_path: str, e: float, n: float) -> float:
 
 def derive_config_fields(dem_path: str) -> dict:
     """Derive center_e, center_n, radius_m, base_elevation from a DEM VRT."""
-    from utils.coords import radius_from_dem
+    from shared.utils.coords import radius_from_dem
 
     center_e, center_n = dem_center(dem_path)
     radius_m = radius_from_dem(dem_path, center_e, center_n) or 500.0

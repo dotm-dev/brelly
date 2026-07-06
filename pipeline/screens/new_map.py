@@ -13,9 +13,10 @@ from tkinter import filedialog, messagebox
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from dem_config import derive_config_fields, derive_config_fields_from_csv
 from settings import load_settings, save_settings
-from utils.dem import build_vrt
+from shared.utils.dem import build_vrt
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 PIPELINE_DIR = Path(__file__).parent.parent
