@@ -5,8 +5,8 @@
 
 A game that places you on real Swiss terrain. This repo contains:
 
-- **`pipeline/`** — Python pipeline that converts Swiss geodata (swisstopo DEM + TLM) into game-ready assets.
-- **`pipeline_beamng/`** — Exports the same maps as BeamNG.drive levels (terrain + roads).
+- **`pipeline/`** — Python pipeline that converts Swiss geodata (swisstopo DEM + TLM) into game-ready assets. See [`pipeline/README.md`](pipeline/README.md).
+- **`pipeline_beamng/`** — Exports the same maps as BeamNG.drive levels (terrain + roads). See [`pipeline_beamng/README.md`](pipeline_beamng/README.md).
 - **`shared/`** — Shared Python helpers used by both pipelines.
 - **`src/`** — Babylon.js game engine (TypeScript).
 - **`maps/`** — Output directory; one subfolder per map, consumed by the engine at runtime.
@@ -70,6 +70,10 @@ python pipeline/run_pipeline.py pipeline/config/<my_map>.json
 
 Output lands in `maps/<my_map>/` — terrain, roads, buildings, vegetation, navigation graph, and a manifest.
 
+Full step-by-step docs, config reference, and troubleshooting:
+[`pipeline/README.md`](pipeline/README.md). To also export the map as a
+BeamNG.drive level, see [`pipeline_beamng/README.md`](pipeline_beamng/README.md).
+
 ### 5. Run the game
 
 ```bash
@@ -101,42 +105,9 @@ Brelly/
 
 ---
 
-## Pipeline overview
-
-The pipeline runs 10 steps in order:
-
-| Step | Script | Output |
-|------|--------|--------|
-| 00 | `00_download.py` | Downloads missing DEM tiles from swisstopo CSV |
-| 01 | `01_reproject.py` | Clips TLM GeoPackage to the map bounding box |
-| 02 | `02_terrain.py` | Builds tiled terrain mesh → `terrain.glb` |
-| 03 | `03_roads.py` | Road surface meshes → `roads.glb` |
-| 04 | `04_buildings.py` | Extruded building footprints → `buildings.glb` |
-| 05 | `05_vegetation.py` | Tree/shrub positions → `vegetation.json` |
-| 06 | `06_road_graph.py` | Navigation graph → `road-graph.json` |
-| 07 | `07_manifest.py` | Engine descriptor → `manifest.json` |
-| 08 | `08_lod.py` | LOD terrain meshes → `terrain_lod1.glb`, `terrain_lod2.glb` |
-| 09 | `09_compress.py` | In-place GLB compression via `gltfpack` |
-
-Full step documentation: [`pipeline/README.md`](pipeline/README.md)
-
----
-
 ## Running tests
 
 ```bash
 source .venv/bin/activate
 pytest pipeline/tests/ pipeline_beamng/tests/
-```
-
----
-
-## Coordinate system
-
-All pipeline output uses a local **ENU (East-North-Up)** frame centred on (`center_e`, `center_n`, `base_elevation`):
-
-```
-X = metres east  of centre
-Y = metres above base_elevation
-Z = metres north of centre
 ```
