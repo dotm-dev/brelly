@@ -67,7 +67,7 @@ def test_main_writes_terrain_files(tmp_path, monkeypatch):
 
     terrain_step.main(str(config_path))
 
-    out_dir = tmp_path / "maps" / "test_area" / "beamng" / "test_area" / "art" / "terrains"
+    out_dir = tmp_path / "maps" / "test_area" / "beamng" / "test_area"
     assert (out_dir / "test_area.ter").exists()
     assert (out_dir / "test_area.terrain.json").exists()
     assert (out_dir / "test_area_heightmap.png").exists()

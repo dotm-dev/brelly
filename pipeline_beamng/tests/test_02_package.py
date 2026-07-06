@@ -34,27 +34,43 @@ def test_main_merges_objects_and_writes_shell(tmp_path, monkeypatch):
 
     package_step.main(str(config_path))
 
-    items_path = out_dir / "main" / "items.level.json"
-    lines = items_path.read_text().strip().split("\n")
-    assert json.loads(lines[0])["class"] == "TerrainBlock"
-    assert json.loads(lines[1])["class"] == "DecalRoad"
+    main_dir = out_dir / "main"
+    top = [json.loads(l) for l in (main_dir / "items.level.json").read_text().strip().split("\n")]
+    assert top[0]["class"] == "SimGroup"
+    assert top[0]["name"] == "MissionGroup"
+
+    mission_dir = main_dir / "MissionGroup"
+    mission = [json.loads(l) for l in (mission_dir / "items.level.json").read_text().strip().split("\n")]
+    assert mission[0]["class"] == "DecalRoad"
 
     # config spawn_position is glTF-frame (x=east, y=up, z=-north); BeamNG gets
     # (east, north, up + 1m clearance)
-    spawn = json.loads(lines[2])
+    spawn = mission[1]
     assert spawn["class"] == "SpawnSphere"
     assert spawn["name"] == "spawn_default"
     assert spawn["position"] == [3.0, 45.0, 2.0]
+    assert mission[2]["class"] == "SimGroup"
+    assert mission[2]["name"] == "level_object"
+
+    level_object_dir = mission_dir / "level_object"
+    level_object = [json.loads(l) for l in (level_object_dir / "items.level.json").read_text().strip().split("\n")]
+    assert level_object[0]["class"] == "SimGroup"
+    assert level_object[0]["name"] == "terrain"
+
+    terrain_dir = level_object_dir / "terrain"
+    terrain = [json.loads(l) for l in (terrain_dir / "items.level.json").read_text().strip().split("\n")]
+    assert terrain[0]["class"] == "TerrainBlock"
 
     assert not (out_dir / "_terrain_objects.json").exists()
     assert not (out_dir / "_road_objects.json").exists()
 
     info = json.loads((out_dir / "info.json").read_text())
+    assert info["title"] == "Test Area"
     assert info["description"] == "Test Area"
+    assert info["defaultSpawnPointName"] == "spawn_default"
     assert info["spawnPoints"][0]["objectname"] == "spawn_default"
 
-    level = json.loads((out_dir / "level.json").read_text())
-    assert level["name"] == "Test Area"
+    assert not (out_dir / "level.json").exists()
 
 
 def test_main_handles_missing_road_objects_and_spawn(tmp_path, monkeypatch):
@@ -68,8 +84,14 @@ def test_main_handles_missing_road_objects_and_spawn(tmp_path, monkeypatch):
 
     package_step.main(str(config_path))
 
-    items_path = out_dir / "main" / "items.level.json"
-    lines = items_path.read_text().strip().split("\n")
-    # terrain + fallback spawn at map origin
-    assert len(lines) == 2
-    assert json.loads(lines[1])["class"] == "SpawnSphere"
+    terrain_dir = out_dir / "main" / "MissionGroup" / "level_object" / "terrain"
+    terrain = [json.loads(l) for l in (terrain_dir / "items.level.json").read_text().strip().split("\n")]
+    assert len(terrain) == 1
+    assert terrain[0]["class"] == "TerrainBlock"
+
+    # no roads: MissionGroup has just the fallback spawn + level_object group
+    mission_dir = out_dir / "main" / "MissionGroup"
+    mission = [json.loads(l) for l in (mission_dir / "items.level.json").read_text().strip().split("\n")]
+    assert len(mission) == 2
+    assert mission[0]["class"] == "SpawnSphere"
+    assert mission[1]["class"] == "SimGroup"

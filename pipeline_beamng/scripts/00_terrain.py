@@ -70,8 +70,7 @@ def main(config_path: str) -> None:
     config = config_from_dict(config_dict)
 
     out_dir = Path("maps") / name / "beamng" / name
-    terrains_dir = out_dir / "art" / "terrains"
-    terrains_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     size = _choose_grid_size(config.radius_m)
     grid = _read_dem_grid(config_dict, size)
@@ -80,13 +79,14 @@ def main(config_path: str) -> None:
     square_size = (config.radius_m * 2) / size
     materials = ["grass"]
 
-    ter_path = terrains_dir / f"{name}.ter"
-    png_path = terrains_dir / f"{name}_heightmap.png"
-    json_path = terrains_dir / f"{name}.terrain.json"
+    ter_path = out_dir / f"{name}.ter"
+    png_path = out_dir / f"{name}_heightmap.png"
+    json_path = out_dir / f"{name}.terrain.json"
 
-    # Paths inside level files use the game-VFS form the docs examples show
-    # ("/levels/example/art/terrains/terrain.ter"), not filesystem-relative paths.
-    vfs_prefix = f"/levels/{name}/art/terrains"
+    # Paths inside level files use the game-VFS form real maps use (terrain
+    # files sit at the level root, e.g. "/levels/example/theTerrain.ter"),
+    # not filesystem-relative paths.
+    vfs_prefix = f"/levels/{name}"
 
     write_ter_file(ter_path, heightmap_u16, materials=materials)
     write_heightmap_png(png_path, heightmap_u16)
