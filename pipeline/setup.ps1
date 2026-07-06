@@ -100,25 +100,7 @@ if (-not $pythonOk) {
 try { py -3.12 --version | Out-Null } catch { Step-Failed "Python 3.12 still not found after install attempt." }
 Write-Host "OK Python 3.12" -ForegroundColor Green
 
-# 2. Blender
-$blenderOk = [bool](Get-Command blender -ErrorAction SilentlyContinue)
-if (-not $blenderOk) {
-    Write-Host ""
-    Write-Host "X Blender not found." -ForegroundColor Red
-    Write-Host "  Will run: winget install BlenderFoundation.Blender" -ForegroundColor Cyan
-    if (Confirm-Step "Proceed?") {
-        $exit = Run-Step "Installing Blender" "winget" @("install", "BlenderFoundation.Blender", "--accept-package-agreements", "--accept-source-agreements", "--silent")
-        if ($exit -ne 0) { Step-Failed "winget install BlenderFoundation.Blender failed." }
-    } else {
-        Step-Failed "Blender is required."
-    }
-}
-if (-not (Get-Command blender -ErrorAction SilentlyContinue)) {
-    Step-Failed "Blender still not found after install attempt."
-}
-Write-Host "OK Blender" -ForegroundColor Green
-
-# 3. Node.js (needed to install gltfpack, which ships as an npm package)
+# 2. Node.js (needed to install gltfpack, which ships as an npm package)
 $nodeOk = [bool](Get-Command npm -ErrorAction SilentlyContinue)
 if (-not $nodeOk) {
     Write-Host ""
@@ -136,7 +118,7 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 Write-Host "OK Node.js" -ForegroundColor Green
 
-# 4. gltfpack (published on npm with prebuilt binaries)
+# 3. gltfpack (published on npm with prebuilt binaries)
 if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
     Write-Host ""
     Write-Host "X gltfpack not found." -ForegroundColor Red
@@ -153,7 +135,7 @@ if (-not (Get-Command gltfpack -ErrorAction SilentlyContinue)) {
 }
 Write-Host "OK gltfpack" -ForegroundColor Green
 
-# 5. Virtual environment
+# 4. Virtual environment
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
     Write-Host ""
     Write-Host "X Virtual environment not found." -ForegroundColor Red
@@ -170,7 +152,7 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
 }
 Write-Host "OK Virtual environment" -ForegroundColor Green
 
-# 6. Python dependencies (also verifies GDAL — see note above)
+# 5. Python dependencies (also verifies GDAL — see note above)
 $depsOk = $false
 try {
     & .venv\Scripts\python.exe -c "from osgeo import gdal; import pyproj, shapely, numpy" 2>$null
@@ -193,7 +175,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK Python dependencies" -ForegroundColor Green
 
-# 7. Launch the app
+# 6. Launch the app
 Write-Host ""
 Write-Host "All requirements satisfied. Launching Brelly Pipeline app..."
 Write-Host "Next time, skip these checks and launch the app directly with:" -ForegroundColor Cyan

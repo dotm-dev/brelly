@@ -126,14 +126,6 @@ def check_deps(project_root: Path) -> CheckResult:
         )
 
 
-def check_blender() -> CheckResult:
-    return check_command(
-        "blender", "Blender",
-        fix_macos="brew install --cask blender",
-        fix_windows="winget install BlenderFoundation.Blender",
-    )
-
-
 def check_gltfpack() -> CheckResult:
     return check_command(
         "gltfpack", "gltfpack",
@@ -194,7 +186,6 @@ _CHECK_FUNCS: dict[str, Callable[[Path], CheckResult]] = {
     "GDAL system library": lambda root: check_gdal_system(),
     "Virtual environment": check_venv,
     "Python dependencies": check_deps,
-    "Blender": lambda root: check_blender(),
     "gltfpack": lambda root: check_gltfpack(),
 }
 
@@ -211,7 +202,6 @@ def run_all_checks(project_root: Path) -> list[CheckResult]:
         check_gdal_system(),
         check_venv(project_root),
         check_deps(project_root),
-        check_blender(),
         check_gltfpack(),
     ]
     if platform.system() == "Darwin":
