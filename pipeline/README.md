@@ -41,6 +41,7 @@ quick start. To create or edit one by hand, base it on
   "center_n": 1247500,
   "radius_m": 500,
   "base_elevation": 450.0,
+  "terrain_cell_m": 1.0,
   "start_line": {
     "position": { "x": 0, "y": 0, "z": -50 },
     "normal":   { "x": 0, "y": 0, "z": 1 },
@@ -71,6 +72,7 @@ quick start. To create or edit one by hand, base it on
 | `center_n` | number | LV95 northing of the map centre (metres) |
 | `radius_m` | number | Half-width of the square bounding box in metres (default 500) |
 | `base_elevation` | number | Ground-level elevation at origin in metres; Y=0 in ENU space |
+| `terrain_cell_m` | number | Terrain heightmap cell size in metres (default 1.0) |
 | `start_line` | object | Race start line position, surface normal, and width |
 | `finish_line` | object | Race finish line (same schema) |
 | `spawn_position` | object | Player vehicle spawn point in ENU space |
@@ -147,7 +149,7 @@ If GDAL is unavailable or the TLM file is missing, an empty GeoPackage placehold
 | Layer name | Used by |
 |------------|---------|
 | `tlm_strassen_strasse` | steps 03, 06 |
-| `tlm_bb_gebaeude` | step 04 |
+| `tlm_bauten_gebaeude_footprint` (falls back to `tlm_bb_gebaeude`) | step 04 |
 | `tlm_bb_einzelbaum_gebuesch` / `tlm_einzelbaum_gebuesch` | step 05 |
 
 ---
@@ -318,7 +320,14 @@ Test modules:
 | `test_lod.py` | LOD sub-sampling logic |
 | `test_terrain_conform.py` | terrain conforming for roads |
 | `test_terrain_force_tiles.py` | tiled terrain mesh generation |
-| `test_app.py` | pipeline app helpers |
+| `test_dem_config.py` | config derivation from DEM extent |
+| `test_dem_utils.py` | VRT building, DEM helpers |
+| `test_download_step.py` | tile download step |
+| `test_new_map_screen.py` | New Map popup UI |
+| `test_run_pipeline_output.py` | orchestrator output/exit codes |
+| `test_run_screen.py` | Run tab UI |
+| `test_settings.py` | remembered TLM path settings |
+| `test_system_checks.py` | System Check tab checks |
 
 ---
 

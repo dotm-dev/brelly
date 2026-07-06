@@ -6,6 +6,8 @@
 A game that places you on real Swiss terrain. This repo contains:
 
 - **`pipeline/`** — Python pipeline that converts Swiss geodata (swisstopo DEM + TLM) into game-ready assets.
+- **`pipeline_beamng/`** — Exports the same maps as BeamNG.drive levels (terrain + roads).
+- **`shared/`** — Shared Python helpers used by both pipelines.
 - **`src/`** — Babylon.js game engine (TypeScript).
 - **`maps/`** — Output directory; one subfolder per map, consumed by the engine at runtime.
 
@@ -37,7 +39,7 @@ shows the same checklist with copy-paste fix commands, without taking any
 action on its own. Command references: [`pipeline/SETUP_MACOS.md`](pipeline/SETUP_MACOS.md) /
 [`pipeline/SETUP_WINDOWS.md`](pipeline/SETUP_WINDOWS.md).
 
-Requirements: Python 3.12, GDAL, Blender, Node.js
+Requirements: Python 3.12, GDAL, Node.js
 
 ### 2. Get source data
 
@@ -87,12 +89,14 @@ Brelly/
 │   ├── run_pipeline.py # main orchestrator
 │   ├── config/         # per-map JSON configs
 │   ├── scripts/        # 10 processing steps (00–09)
-│   ├── utils/          # shared helpers
-│   └── blender/        # Blender baking scripts
+│   └── tests/          # pytest suite
+├── pipeline_beamng/    # BeamNG.drive level export (terrain + roads)
+│   └── tests/          # pytest suite
+├── shared/
+│   └── utils/          # helpers shared by pipeline/ and pipeline_beamng/
 ├── src/                # Babylon.js game engine (TypeScript)
 ├── maps/               # pipeline output (git-ignored)
-├── data/               # source geodata (git-ignored)
-└── tests/              # pytest suite
+└── data/               # source geodata (git-ignored)
 ```
 
 ---
@@ -122,7 +126,7 @@ Full step documentation: [`pipeline/README.md`](pipeline/README.md)
 
 ```bash
 source .venv/bin/activate
-pytest pipeline/tests/
+pytest pipeline/tests/ pipeline_beamng/tests/
 ```
 
 ---
