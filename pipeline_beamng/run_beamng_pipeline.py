@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pipeline_beamng/run_pipeline.py
+# pipeline_beamng/run_beamng_pipeline.py
 """Orchestrator: exports a Brelly map config as a BeamNG level (terrain +
 roads). Mirrors pipeline/run_pipeline.py's subprocess-per-step pattern —
 numbered scripts are invoked as subprocesses, never imported directly."""
