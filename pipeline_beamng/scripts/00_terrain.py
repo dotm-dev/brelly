@@ -10,10 +10,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))                       # pipeline_beamng/
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipeline"))    # pipeline/
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))                # repo root, for shared/
 
-from utils.io import read_json               # pipeline/utils/io.py
-from utils.coords import config_from_dict, bbox_from_center   # pipeline/utils/coords.py
+from shared.utils.io import read_json
+from shared.utils.coords import config_from_dict, bbox_from_center
 
 from formats.terrain import (
     encode_heightmap, write_ter_file, write_terrain_json,

@@ -10,9 +10,9 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipeline"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json
+from shared.utils.io import read_json
 from formats.coords import road_node_to_beamng
 from formats.road import write_items_level_json
 
@@ -25,7 +25,7 @@ def _resolve_radius_m(config_dict: dict) -> float:
     dem_path = config_dict.get("source_data", {}).get("dem")
     if not dem_path or "center_e" not in config_dict or "center_n" not in config_dict:
         return 0.0
-    from utils.coords import radius_from_dem
+    from shared.utils.coords import radius_from_dem
     detected = radius_from_dem(dem_path, float(config_dict["center_e"]), float(config_dict["center_n"]))
     return detected or 500.0
 

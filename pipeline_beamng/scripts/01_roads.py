@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipeline"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.io import read_json
+from shared.utils.io import read_json
 from formats.coords import road_node_to_beamng
 from formats.road import decalroad_object
 
