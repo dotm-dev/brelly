@@ -11,15 +11,15 @@ from system_checks import CheckResult, run_all_checks, check_command, map_data_r
 
 
 def test_check_command_found():
-    with patch("shutil.which", return_value="/usr/bin/blender"):
-        result = check_command("blender", "Blender")
+    with patch("system_checks.which", return_value="/usr/bin/some-tool"):
+        result = check_command("some-tool", "Some Tool")
         assert result.ok is True
-        assert result.name == "Blender"
+        assert result.name == "Some Tool"
 
 
 def test_check_command_missing():
-    with patch("shutil.which", return_value=None):
-        result = check_command("blender", "Blender")
+    with patch("system_checks.which", return_value=None):
+        result = check_command("some-tool", "Some Tool")
         assert result.ok is False
 
 
@@ -30,7 +30,6 @@ def test_run_all_checks_returns_named_results(tmp_path):
     assert "GDAL system library" in names
     assert "Virtual environment" in names
     assert "Python dependencies" in names
-    assert "Blender" in names
     assert "gltfpack" in names
 
 
@@ -116,14 +115,6 @@ def test_map_data_ready_false_when_dem_missing_and_no_csv_staged(tmp_path):
     result = map_data_ready(config_path, project_root=tmp_path)
     assert result.ok is False
     assert "DEM" in result.detail
-
-
-def test_run_single_check_blender_matches_check_blender():
-    from system_checks import run_single_check, check_blender
-    result = run_single_check("Blender", project_root=Path("."))
-    expected = check_blender()
-    assert result.name == expected.name
-    assert result.ok == expected.ok
 
 
 def test_run_single_check_unknown_name_raises_keyerror():

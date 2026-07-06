@@ -187,21 +187,7 @@ fi
 command -v gdal-config >/dev/null 2>&1 || step_failed "GDAL still not found after install attempt."
 ok "GDAL system library"
 
-# 4. Blender
-if ! command -v blender >/dev/null 2>&1; then
-  echo ""
-  missing "Blender not found."
-  will_run "brew install --cask blender"
-  if confirm "Proceed?"; then
-    run_step "Installing Blender" brew install --cask blender || step_failed "brew install --cask blender failed."
-  else
-    step_failed "Blender is required."
-  fi
-fi
-command -v blender >/dev/null 2>&1 || step_failed "Blender still not found after install attempt."
-ok "Blender"
-
-# 5. Node.js (needed to install gltfpack, which ships as an npm package —
+# 4. Node.js (needed to install gltfpack, which ships as an npm package —
 # there's no Homebrew formula for it)
 if ! command -v npm >/dev/null 2>&1; then
   echo ""
@@ -216,7 +202,7 @@ fi
 command -v npm >/dev/null 2>&1 || step_failed "Node.js still not found after install attempt."
 ok "Node.js"
 
-# 6. gltfpack (published on npm with prebuilt binaries; no Homebrew formula)
+# 5. gltfpack (published on npm with prebuilt binaries; no Homebrew formula)
 if ! command -v gltfpack >/dev/null 2>&1; then
   echo ""
   missing "gltfpack not found."
@@ -230,7 +216,7 @@ fi
 command -v gltfpack >/dev/null 2>&1 || step_failed "gltfpack still not found after install attempt."
 ok "gltfpack"
 
-# 7. Virtual environment
+# 6. Virtual environment
 if [ ! -f ".venv/bin/python3" ]; then
   echo ""
   missing "Virtual environment not found."
@@ -244,7 +230,7 @@ fi
 [ -f ".venv/bin/python3" ] || step_failed "Virtual environment still missing after creation attempt."
 ok "Virtual environment"
 
-# 8. Python dependencies
+# 7. Python dependencies
 if ! .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1; then
   echo ""
   missing "Python dependencies not installed."
@@ -258,7 +244,7 @@ fi
 .venv/bin/python3 -c "from osgeo import gdal; import pyproj, shapely, numpy" >/dev/null 2>&1 || step_failed "Dependencies still not importable after install attempt."
 ok "Python dependencies"
 
-# 9. Launch the app
+# 8. Launch the app
 echo ""
 echo "All requirements satisfied. Launching Brelly Pipeline app..."
 echo "${C_CYAN}Next time, skip these checks and launch the app directly with:${C_RESET}"
