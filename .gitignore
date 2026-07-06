@@ -1,3 +1,7 @@
+# Claude
+CLAUDE.md
+.claude/
+
 # Dependencies
 node_modules/
 
@@ -47,3 +51,6 @@ docs/superpowers/
 
 # Local docs/plans
 docs/
+
+# BeamNG
+BeamNG/
