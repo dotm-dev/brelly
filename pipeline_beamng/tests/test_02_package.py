@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipeline"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 spec = importlib.util.spec_from_file_location(
     "beamng_package_step", Path(__file__).parent.parent / "scripts" / "02_package.py"
