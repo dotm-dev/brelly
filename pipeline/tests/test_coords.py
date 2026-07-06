@@ -3,8 +3,9 @@ import pytest
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from utils.coords import lv95_to_enu, enu_to_lv95, bbox_from_center, Config
+from shared.utils.coords import lv95_to_enu, enu_to_lv95, bbox_from_center, Config
 
 
 def test_lv95_to_enu_origin_is_zero():

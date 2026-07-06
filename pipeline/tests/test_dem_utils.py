@@ -2,13 +2,14 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
 
 gdal = pytest.importorskip("osgeo.gdal")
 numpy = pytest.importorskip("numpy")
 
-from utils.dem import build_vrt
+from shared.utils.dem import build_vrt
 
 
 def _make_tif(path: Path, ox: float, oy: float, size: int = 4, px: float = 1.0) -> None:

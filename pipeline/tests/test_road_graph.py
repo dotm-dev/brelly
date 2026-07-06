@@ -2,9 +2,10 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.road_graph import build_road_graph, RoadLine
-from utils.coords import Config
+from shared.utils.coords import Config
 
 
 CONFIG = Config(center_e=2683000.0, center_n=1247500.0, base_elevation=450.0)
